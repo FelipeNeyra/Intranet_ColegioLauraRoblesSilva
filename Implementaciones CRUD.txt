@@ -1,0 +1,20 @@
+
+Para la tercera etapa del proyecto del sitio web de la Escuela Laura Robles Silva se implementarán mejoras mediante el uso de React y TypeScript, implementado distintos módulos de naturaleza CRUD por cada integrante.
+Las funcionalidades pensadas son las siguientes:
+1.- Gestión de Estudiantes y Profesores.
+Mediante el uso de usuarios administradores, se permitirá:
+- Registro de estudiantes y Profesores.
+- Modificación de información de distintos estudiantes y Profesores.
+- Eliminación de distintos estudiantes y Profesores.
+2.- Acceso de Profesores.
+Un usuario identificado como profesor podrá:
+- Registrarse e iniciar sesión.
+- Ver sus cursos y estudiantes asociados.
+- Poner notas.
+- Citar apoderados.
+3.- Reservas en Sala de Computación:
+Mediante la integración de un nuevo formulario se permitirá lo siguiente:
+- Reservar por parte de un profesor o administrador.
+- Establecer fecha, horario y cantidad de personas.
+- Integrar datos personales requeridos (nombre, apellido, RUT y correo).
+- Almacenar solicitud de forma local.
