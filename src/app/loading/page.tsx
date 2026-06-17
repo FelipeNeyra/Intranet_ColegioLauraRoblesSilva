@@ -1,17 +1,22 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
-import { seedInitialUsers } from "../../lib/auth";
+import { AuthContext } from "../../context/AuthContext";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { user, login } = useContext(AuthContext);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    seedInitialUsers();
-  }, []);
+    if (user) {
+      router.replace("/admin_section");
+    }
+  }, [user, router]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -20,8 +25,14 @@ export default function LoginPage() {
       return;
     }
 
+    const loginResult = login(email.trim(), password.trim());
+    if (!loginResult.success) {
+      setError(loginResult.error ?? "No se pudo iniciar sesión.");
+      return;
+    }
+
     setError("");
-    console.log("Intento de inicio de sesión", { email, password });
+    router.replace("/admin_section");
   };
 
   return (
