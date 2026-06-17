@@ -79,7 +79,7 @@
   min-height: 48px;
   border: none;
   border-radius: 14px;
-  background: #2563eb;
+  background: #db353d;
   color: #ffffff;
   font-size: 1rem;
   font-weight: 700;
@@ -88,7 +88,7 @@
 }
 
 .submitButton:hover {
-  background: #1d4ed8;
+  background: #bd1515;
 }
 
 @media (max-width: 520px) {

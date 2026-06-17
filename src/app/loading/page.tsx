@@ -53,7 +53,7 @@ export default function LoginPage() {
               type="email"
               className={styles.input}
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) => {setEmail(event.target.value);setError("");}}
               placeholder="tu@dominio.cl"
             />
           </div>
@@ -67,7 +67,7 @@ export default function LoginPage() {
               type="password"
               className={styles.input}
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) => {setPassword(event.target.value);setError("");}}
               placeholder="Ingresa tu contraseña"
             />
           </div>
