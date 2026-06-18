@@ -1,14 +1,16 @@
 export interface Curso {
   id: string;
   nombre: string;
-  nivel: string;
+  nivel: "Básico" | "Medio" | "Alto";
   profesor: string;
 }
 
 export interface Estudiante {
   id: string;
   nombre: string;
-  grado: string;
+  grado: "Kinder" | "1°" | "2°" | "3°" | "4°" | "5°" | "6°" | "7°" | "8°" | "1° Medio" | "2° Medio" | "3° Medio" | "4° Medio";
+  rut: string;
+  fechaNacimiento: string;
   correo: string;
 }
 
@@ -16,6 +18,8 @@ export interface Docente {
   id: string;
   nombre: string;
   materia: string;
+  rut: string;
+  fechaNacimiento: string;
   correo: string;
 }
 
@@ -80,23 +84,23 @@ export const seedInitialAdminData = (): void => {
     saveCursosToStorage([
       { id: "curso-1", nombre: "Matemáticas 101", nivel: "Básico", profesor: "Carlos Ramírez" },
       { id: "curso-2", nombre: "Historia General", nivel: "Medio", profesor: "María Fuentes" },
-      { id: "curso-3", nombre: "Programación Web", nivel: "Avanzado", profesor: "Diego Morales" },
+      { id: "curso-3", nombre: "Programación Web", nivel: "Alto", profesor: "Diego Morales" },
     ]);
   }
 
   if (!hasEstudiantes) {
     saveEstudiantesToStorage([
-      { id: "est-1", nombre: "Ana González", grado: "1° Medio", correo: "ana.gonzalez@laurarobles.cl" },
-      { id: "est-2", nombre: "Pedro Soto", grado: "2° Medio", correo: "pedro.soto@laurarobles.cl" },
-      { id: "est-3", nombre: "Julieta Morales", grado: "3° Medio", correo: "julieta.morales@laurarobles.cl" },
+      { id: "est-1", nombre: "Ana González", grado: "1° Medio", rut: "12.345.678-9", fechaNacimiento: "2008-05-15", correo: "ana.gonzalez@laurarobles.cl" },
+      { id: "est-2", nombre: "Pedro Soto", grado: "2° Medio", rut: "13.456.789-0", fechaNacimiento: "2007-08-22", correo: "pedro.soto@laurarobles.cl" },
+      { id: "est-3", nombre: "Julieta Morales", grado: "3° Medio", rut: "14.567.890-1", fechaNacimiento: "2006-11-10", correo: "julieta.morales@laurarobles.cl" },
     ]);
   }
 
   if (!hasDocentes) {
     saveDocentesToStorage([
-      { id: "doc-1", nombre: "Carlos Ramírez", materia: "Matemáticas", correo: "carlos.ramirez@laurarobles.cl" },
-      { id: "doc-2", nombre: "María Fuentes", materia: "Historia", correo: "maria.fuentes@laurarobles.cl" },
-      { id: "doc-3", nombre: "Diego Morales", materia: "Programación", correo: "diego.morales@laurarobles.cl" },
+      { id: "doc-1", nombre: "Carlos Ramírez", materia: "Matemáticas", rut: "15.678.901-2", fechaNacimiento: "1985-03-20", correo: "carlos.ramirez@laurarobles.cl" },
+      { id: "doc-2", nombre: "María Fuentes", materia: "Historia", rut: "16.789.012-3", fechaNacimiento: "1988-07-14", correo: "maria.fuentes@laurarobles.cl" },
+      { id: "doc-3", nombre: "Diego Morales", materia: "Programación", rut: "17.890.123-4", fechaNacimiento: "1990-01-25", correo: "diego.morales@laurarobles.cl" },
     ]);
   }
 };
@@ -107,3 +111,15 @@ const generateId = (): string =>
 export const getNewCurso = (partial: Omit<Curso, "id">): Curso => ({ id: generateId(), ...partial });
 export const getNewEstudiante = (partial: Omit<Estudiante, "id">): Estudiante => ({ id: generateId(), ...partial });
 export const getNewDocente = (partial: Omit<Docente, "id">): Docente => ({ id: generateId(), ...partial });
+
+export const validateEmail = (email: string): boolean => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+
+export const validateRut = (rut: string): boolean => {
+  const rutRegex = /^\d{1,2}\.\d{3}\.\d{3}-[\dKk]$/;
+  return rutRegex.test(rut);
+};
+
+export const gradoOptions = ["Kinder", "1°", "2°", "3°", "4°", "5°", "6°", "7°", "8°", "1° Medio", "2° Medio", "3° Medio", "4° Medio"] as const;
+export const nivelOptions = ["Básico", "Medio", "Alto"] as const;
