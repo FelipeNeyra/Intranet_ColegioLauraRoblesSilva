@@ -64,6 +64,7 @@ export function ProfesorReservaPanel({
   const [curso, setCurso] = useState("");
   const [personas, setPersonas] = useState("");
   const [motivo, setMotivo] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
 
   const weekDates = useMemo(() => getWeekDates(new Date(weekStart)), [weekStart]);
 
@@ -97,6 +98,7 @@ export function ProfesorReservaPanel({
       setCurso("");
       setPersonas("");
       setMotivo("");
+      setStatusMessage("");
     }
   };
 
@@ -127,6 +129,9 @@ export function ProfesorReservaPanel({
     setCurso("");
     setPersonas("");
     setMotivo("");
+    setStatusMessage(
+      "Solicitud guardada. Queda en estado Pendiente y el administrador podrá aprobar o rechazar la reserva."
+    );
   };
 
   return (
@@ -135,6 +140,7 @@ export function ProfesorReservaPanel({
         <div>
           <h3>Reserva de Sala de Computación</h3>
           <p>Selecciona un horario disponible haciendo clic en las celdas verdes.</p>
+          {statusMessage && <p className={styles.statusMessage}>{statusMessage}</p>}
         </div>
         <div className={styles.weekControls}>
           <button type="button" className={styles.navButton} onClick={goToPreviousWeek}>
@@ -158,12 +164,16 @@ export function ProfesorReservaPanel({
             <span>Disponible</span>
           </div>
           <div className={styles.legendItem}>
+            <span className={`${styles.legendBox} ${styles.pending}`}></span>
+            <span>Pendiente</span>
+          </div>
+          <div className={styles.legendItem}>
             <span className={`${styles.legendBox} ${styles.blocked}`}></span>
             <span>Bloqueado</span>
           </div>
           <div className={styles.legendItem}>
             <span className={`${styles.legendBox} ${styles.occupied}`}></span>
-            <span>Ocupado</span>
+            <span>Aprobado</span>
           </div>
         </div>
 
@@ -190,21 +200,43 @@ export function ProfesorReservaPanel({
                   <span>{date.slice(5)}</span>
                 </div>
                 {timeSlots.map((slot) => {
-                  const reserva = dayReservas.find((item) => slot >= item.horaInicio && slot < item.horaFin && item.estado === "Aprobada");
+                  const reservaAprobada = dayReservas.find(
+                    (item) => slot >= item.horaInicio && slot < item.horaFin && item.estado === "Aprobada"
+                  );
+                  const reservaPendiente = dayReservas.find(
+                    (item) => slot >= item.horaInicio && slot < item.horaFin && item.estado === "Pendiente"
+                  );
                   const bloqueo = dayBloqueos.find((item) => item.hora === slot);
                   const isBlocked = Boolean(bloqueo);
-                  const isOccupied = Boolean(reserva);
+                  const isPending = Boolean(reservaPendiente);
+                  const isOccupied = Boolean(reservaAprobada) || isPending;
                   const isSelected = selectedSlot?.fecha === date && selectedSlot?.hora === slot;
+
+                  const slotClass = isBlocked
+                    ? styles.slotBlocked
+                    : isPending
+                    ? styles.slotPending
+                    : isOccupied
+                    ? styles.slotOccupied
+                    : styles.slotFree;
+
+                  const slotLabel = isBlocked
+                    ? "Bloqueado"
+                    : isPending
+                    ? "Pendiente"
+                    : isOccupied
+                    ? "Ocupado"
+                    : "Libre";
 
                   return (
                     <button
                       key={`${date}-${slot}`}
                       type="button"
-                      className={`${styles.slotCard} ${isBlocked ? styles.slotBlocked : isOccupied ? styles.slotOccupied : styles.slotFree} ${isSelected ? styles.slotSelected : ""}`}
+                      className={`${styles.slotCard} ${slotClass} ${isSelected ? styles.slotSelected : ""}`}
                       onClick={() => handleSlotClick(date, slot)}
                       disabled={isBlocked || isOccupied}
                     >
-                      {isBlocked ? "Bloqueado" : isOccupied ? "Ocupado" : "Libre"}
+                      {slotLabel}
                     </button>
                   );
                 })}

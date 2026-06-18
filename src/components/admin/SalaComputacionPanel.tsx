@@ -57,11 +57,13 @@ export function SalaComputacionPanel() {
   const [search, setSearch] = useState("");
   const [bloqueoForm, setBloqueoForm] = useState({ hora: timeSlots[0], motivo: "", fecha: getToday() });
   const [weekStart, setWeekStart] = useState<string>(getToday());
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     // Carga inicial
     setReservas(getReservaSalaFromStorage());
     setBloqueos(getHorarioBloqueadoFromStorage());
+    setIsLoaded(true);
   }, []);
 
   // Sincronización en tiempo real cada 2 segundos
@@ -75,12 +77,14 @@ export function SalaComputacionPanel() {
   }, []);
 
   useEffect(() => {
+    if (!isLoaded) return;
     saveReservaSalaToStorage(reservas);
-  }, [reservas]);
+  }, [reservas, isLoaded]);
 
   useEffect(() => {
+    if (!isLoaded) return;
     saveHorarioBloqueadoToStorage(bloqueos);
-  }, [bloqueos]);
+  }, [bloqueos, isLoaded]);
 
   const weekDates = useMemo(() => getWeekDates(new Date(weekStart)), [weekStart]);
 
@@ -272,22 +276,38 @@ export function SalaComputacionPanel() {
                   <span>{date.slice(5)}</span>
                 </div>
                 {timeSlots.map((slot) => {
-                  const reserva = dayReservas.find((item) => slot >= item.horaInicio && slot < item.horaFin && item.estado === "Aprobada");
+                  const reservaAprobada = dayReservas.find(
+                    (item) => slot >= item.horaInicio && slot < item.horaFin && item.estado === "Aprobada"
+                  );
+                  const reservaPendiente = dayReservas.find(
+                    (item) => slot >= item.horaInicio && slot < item.horaFin && item.estado === "Pendiente"
+                  );
                   const bloqueo = dayBloqueos.find((item) => item.hora === slot);
                   const isBlocked = Boolean(bloqueo);
-                  const isOccupied = Boolean(reserva);
+                  const isPending = Boolean(reservaPendiente);
+                  const isOccupied = Boolean(reservaAprobada);
+
+                  const slotClass = isBlocked
+                    ? styles.slotBlocked
+                    : isPending
+                    ? styles.slotPending
+                    : isOccupied
+                    ? styles.slotOccupied
+                    : styles.slotFree;
 
                   return (
                     <button
                       key={`${date}-${slot}`}
                       type="button"
-                      className={`${styles.slotCard} ${isBlocked ? styles.slotBlocked : isOccupied ? styles.slotOccupied : styles.slotFree}`}
+                      className={`${styles.slotCard} ${slotClass}`}
                       onClick={() => toggleBloqueo(date, slot)}
                     >
                       {isBlocked ? (
                         <span>{bloqueo?.motivo}</span>
+                      ) : isPending ? (
+                        <span>{reservaPendiente?.curso || "Pendiente"}</span>
                       ) : isOccupied ? (
-                        <span>{reserva?.curso}</span>
+                        <span>{reservaAprobada?.curso}</span>
                       ) : (
                         <span>Disponible</span>
                       )}

@@ -43,7 +43,7 @@ interface FormErrors {
 export default function AdminSectionPage() {
   const router = useRouter();
   const { user, logout, isInitializing } = useContext(AuthContext);
-  const [activeSection, setActiveSection] = useState<Section>("Cursos");
+  const [activeSection, setActiveSection] = useState<Section>("Sala de Computación");
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [estudiantes, setEstudiantes] = useState<Estudiante[]>([]);
   const [docentes, setDocentes] = useState<Docente[]>([]);

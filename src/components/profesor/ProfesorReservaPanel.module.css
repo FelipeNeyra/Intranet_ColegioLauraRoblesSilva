@@ -23,6 +23,16 @@
   font-size: 0.95rem;
 }
 
+.statusMessage {
+  margin: 0.75rem 0 0 0;
+  color: #15803d;
+  font-size: 0.93rem;
+  background: #d1fae5;
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  border: 1px solid #a7f3d0;
+}
+
 .weekControls {
   display: flex;
   gap: 0.75rem;
@@ -108,6 +118,11 @@
   border: 1px solid #10b981;
 }
 
+.legendBox.pending {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+}
+
 .legendBox.blocked {
   background: #e5e7eb;
 }
@@ -115,6 +130,11 @@
 .legendBox.occupied {
   background: #fef2f2;
   border: 1px solid #ef4444;
+}
+
+.slotPending {
+  background: #fef3c7;
+  color: #b45309;
 }
 
 .weekGrid {
