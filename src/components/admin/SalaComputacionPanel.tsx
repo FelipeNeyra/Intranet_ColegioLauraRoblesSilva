@@ -1,7 +1,5 @@
 "use client";
 
-"use client";
-
 import { useEffect, useMemo, useState } from "react";
 import styles from "./SalaComputacionPanel.module.css";
 import {
@@ -53,7 +51,6 @@ const getToday = (): string => new Date().toISOString().slice(0, 10);
 export function SalaComputacionPanel() {
   const [reservas, setReservas] = useState<ReservaSala[]>([]);
   const [bloqueos, setBloqueos] = useState<HorarioBloqueado[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>(getToday());
   const [search, setSearch] = useState("");
   const [bloqueoForm, setBloqueoForm] = useState({ hora: timeSlots[0], motivo: "", fecha: getToday() });
   const [weekStart, setWeekStart] = useState<string>(getToday());
@@ -73,6 +70,16 @@ export function SalaComputacionPanel() {
 
   const weekDates = useMemo(() => getWeekDates(new Date(weekStart)), [weekStart]);
 
+  const reservasPendientes = useMemo(
+    () => reservas.filter((reserva) => reserva.estado === "Pendiente"),
+    [reservas]
+  );
+
+  const reservasAprobadas = useMemo(
+    () => reservas.filter((reserva) => reserva.estado === "Aprobada"),
+    [reservas]
+  );
+
   const reservasFiltradas = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) {
@@ -90,10 +97,8 @@ export function SalaComputacionPanel() {
     });
   }, [reservas, search]);
 
-  const getDateKey = (date: string) => new Date(date).toISOString().slice(0, 10);
-
-  const getReservasByDate = (date: string) =>
-    reservas.filter((reserva) => reserva.fecha === date);
+  const getReservasAprobadasByDate = (date: string) =>
+    reservasAprobadas.filter((reserva) => reserva.fecha === date);
 
   const getBloqueosByDate = (date: string) =>
     bloqueos.filter((bloqueo) => bloqueo.fecha === date);
@@ -184,7 +189,7 @@ export function SalaComputacionPanel() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
-        <span className={styles.summaryBadge}>{reservas.length} reservas totales</span>
+        <span className={styles.summaryBadge}>{reservasPendientes.length} pendientes</span>
       </div>
 
       <div className={styles.scheduleSection}>
@@ -249,9 +254,8 @@ export function SalaComputacionPanel() {
           </div>
 
           {weekDates.map((date) => {
-            const dayName = new Date(date).toLocaleDateString("es-CL", { weekday: "long" });
             const dayLabel = weekDays[weekDates.indexOf(date)]?.label || "";
-            const dayReservas = getReservasByDate(date);
+            const dayReservas = getReservasAprobadasByDate(date);
             const dayBloqueos = getBloqueosByDate(date);
 
             return (
