@@ -23,9 +23,33 @@ export interface Docente {
   correo: string;
 }
 
+export interface ReservaSala {
+  id: string;
+  nombre: string;
+  apellido: string;
+  rut: string;
+  correo: string;
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  curso: string;
+  personas: string;
+  motivo: string;
+  estado: "Pendiente" | "Aprobada" | "Rechazada";
+}
+
+export interface HorarioBloqueado {
+  id: string;
+  fecha: string;
+  hora: string;
+  motivo: string;
+}
+
 const CURSOS_STORAGE_KEY = "intranet_cursos";
 const ESTUDIANTES_STORAGE_KEY = "intranet_estudiantes";
 const DOCENTES_STORAGE_KEY = "intranet_docentes";
+const RESERVAS_SALA_STORAGE_KEY = "intranet_reservas_sala";
+const HORARIOS_BLOQUEADOS_STORAGE_KEY = "intranet_horarios_bloqueados";
 
 const getStorageValue = <T>(key: string, fallback: T): T => {
   if (typeof window === "undefined") {
@@ -62,6 +86,12 @@ export const getEstudiantesFromStorage = (): Estudiante[] =>
 export const getDocentesFromStorage = (): Docente[] =>
   getStorageValue<Docente[]>(DOCENTES_STORAGE_KEY, []);
 
+export const getReservaSalaFromStorage = (): ReservaSala[] =>
+  getStorageValue<ReservaSala[]>(RESERVAS_SALA_STORAGE_KEY, []);
+
+export const getHorarioBloqueadoFromStorage = (): HorarioBloqueado[] =>
+  getStorageValue<HorarioBloqueado[]>(HORARIOS_BLOQUEADOS_STORAGE_KEY, []);
+
 export const saveCursosToStorage = (cursos: Curso[]): void =>
   setStorageValue(CURSOS_STORAGE_KEY, cursos);
 
@@ -71,6 +101,12 @@ export const saveEstudiantesToStorage = (estudiantes: Estudiante[]): void =>
 export const saveDocentesToStorage = (docentes: Docente[]): void =>
   setStorageValue(DOCENTES_STORAGE_KEY, docentes);
 
+export const saveReservaSalaToStorage = (reservas: ReservaSala[]): void =>
+  setStorageValue(RESERVAS_SALA_STORAGE_KEY, reservas);
+
+export const saveHorarioBloqueadoToStorage = (bloqueos: HorarioBloqueado[]): void =>
+  setStorageValue(HORARIOS_BLOQUEADOS_STORAGE_KEY, bloqueos);
+
 export const seedInitialAdminData = (): void => {
   if (typeof window === "undefined") {
     return;
@@ -79,6 +115,8 @@ export const seedInitialAdminData = (): void => {
   const hasCursos = window.localStorage.getItem(CURSOS_STORAGE_KEY);
   const hasEstudiantes = window.localStorage.getItem(ESTUDIANTES_STORAGE_KEY);
   const hasDocentes = window.localStorage.getItem(DOCENTES_STORAGE_KEY);
+  const hasReservasSala = window.localStorage.getItem(RESERVAS_SALA_STORAGE_KEY);
+  const hasHorariosBloqueados = window.localStorage.getItem(HORARIOS_BLOQUEADOS_STORAGE_KEY);
 
   if (!hasCursos) {
     saveCursosToStorage([
@@ -103,6 +141,50 @@ export const seedInitialAdminData = (): void => {
       { id: "doc-3", nombre: "Diego Morales", materia: "Programación", rut: "17.890.123-4", fechaNacimiento: "1990-01-25", correo: "diego.morales@laurarobles.cl" },
     ]);
   }
+
+  if (!hasReservasSala) {
+    saveReservaSalaToStorage([
+      {
+        id: "reserva-1",
+        nombre: "Camila",
+        apellido: "López",
+        rut: "18.901.234-5",
+        correo: "camila.lopez@laurarobles.cl",
+        fecha: new Date().toISOString().slice(0, 10),
+        horaInicio: "10:00",
+        horaFin: "11:00",
+        curso: "Programación",
+        personas: "18",
+        motivo: "Clase práctica de informática",
+        estado: "Aprobada",
+      },
+      {
+        id: "reserva-2",
+        nombre: "Jorge",
+        apellido: "Pérez",
+        rut: "19.012.345-6",
+        correo: "jorge.perez@laurarobles.cl",
+        fecha: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
+        horaInicio: "14:00",
+        horaFin: "15:00",
+        curso: "Biología",
+        personas: "25",
+        motivo: "Uso de software educativo",
+        estado: "Pendiente",
+      },
+    ]);
+  }
+
+  if (!hasHorariosBloqueados) {
+    saveHorarioBloqueadoToStorage([
+      {
+        id: "bloqueo-1",
+        fecha: new Date().toISOString().slice(0, 10),
+        hora: "12:00",
+        motivo: "Reunión administrativa",
+      },
+    ]);
+  }
 };
 
 const generateId = (): string =>
@@ -111,6 +193,8 @@ const generateId = (): string =>
 export const getNewCurso = (partial: Omit<Curso, "id">): Curso => ({ id: generateId(), ...partial });
 export const getNewEstudiante = (partial: Omit<Estudiante, "id">): Estudiante => ({ id: generateId(), ...partial });
 export const getNewDocente = (partial: Omit<Docente, "id">): Docente => ({ id: generateId(), ...partial });
+export const getNewReservaSala = (partial: Omit<ReservaSala, "id">): ReservaSala => ({ id: generateId(), ...partial });
+export const getNewHorarioBloqueado = (partial: Omit<HorarioBloqueado, "id">): HorarioBloqueado => ({ id: generateId(), ...partial });
 
 export const validateEmail = (email: string): boolean => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);

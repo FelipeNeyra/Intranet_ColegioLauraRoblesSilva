@@ -1,0 +1,325 @@
+.panel {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.headerRow,
+.toolbar,
+.requestsHeader,
+.requestTop,
+.actions,
+.scheduleHeader,
+.manualBlocker,
+.weekControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.25rem;
+  color: #db353d;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.headerRow h2,
+.requestsHeader h3,
+.scheduleHeader h3 {
+  margin: 0;
+  color: #1f2937;
+}
+
+.input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 500;
+  box-sizing: border-box;
+}
+
+.input::placeholder {
+  color: #64748b;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
+.summaryBadge {
+  padding: 0.5rem 0.85rem;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-radius: 999px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.blockFormCard {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #fff7f7 0%, #ffffff 100%);
+  border: 1px solid #fee2e2;
+}
+
+.manualBlocker {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.blockField,
+.blockFieldWide {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.blockField {
+  flex: 1 1 180px;
+}
+
+.blockFieldWide {
+  flex: 2 1 320px;
+}
+
+.blockLabel {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.blockHint {
+  margin: 0.75rem 0 0;
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+.scheduleSection,
+.requestsSection {
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 1rem;
+  background: #fafafa;
+}
+
+.weekControls {
+  justify-content: flex-end;
+}
+
+.navButton {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid #dc2626;
+  background: #ffffff;
+  color: #b91c1c;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.navButton:hover {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.navButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+}
+
+.weekGrid {
+  display: grid;
+  grid-template-columns: 90px repeat(5, minmax(140px, 1fr));
+  gap: 0.5rem;
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+.timeColumn,
+.dayColumn {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.timeHeader,
+.dayHeader {
+  min-height: 54px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.timeCell,
+.dayColumn .slotCard {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem;
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.dayColumn .slotCard {
+  min-height: 58px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+.slotFree {
+  background: #ecfdf3;
+  color: #166534;
+}
+
+.slotOccupied {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.slotBlocked {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.blockList {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.blockItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 0.8rem 1rem;
+}
+
+.blockItem p {
+  margin: 0.15rem 0 0;
+  color: #475569;
+}
+
+.requestList {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.requestCard {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 1rem;
+}
+
+.requestCard p {
+  margin: 0.2rem 0;
+  color: #475569;
+}
+
+.statusBadge {
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.aprobada {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.pendiente {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.rechazada {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.approveButton,
+.rejectButton,
+.deleteButton {
+  min-height: 42px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.approveButton {
+  background: #16a34a;
+  color: white;
+}
+
+.rejectButton {
+  background: #dc2626;
+  color: white;
+}
+
+.deleteButton {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+@media (max-width: 640px) {
+  .headerRow,
+  .toolbar,
+  .requestsHeader,
+  .scheduleHeader,
+  .requestTop,
+  .actions,
+  .blockItem,
+  .weekControls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .manualBlocker {
+    align-items: stretch;
+  }
+
+  .blockField,
+  .blockFieldWide {
+    width: 100%;
+  }
+
+  .weekGrid {
+    grid-template-columns: 90px repeat(5, minmax(160px, 1fr));
+  }
+}
