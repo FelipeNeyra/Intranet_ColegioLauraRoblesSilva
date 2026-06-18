@@ -24,6 +24,7 @@ import {
   gradoOptions,
   nivelOptions,
 } from "../../lib/adminData";
+import { addUserAccount } from "../../lib/auth";
 
 const sections = ["Cursos", "Estudiantes", "Docentes", "Sala de Computación"] as const;
 type Section = (typeof sections)[number];
@@ -70,8 +71,18 @@ export default function AdminSectionPage() {
   const [docenteErrors, setDocenteErrors] = useState<FormErrors>({});
 
   useEffect(() => {
-    if (!isInitializing && !user) {
-      router.replace("/loading");
+    if (!isInitializing) {
+      if (!user) {
+        router.replace("/loading");
+        return;
+      }
+      if (user.rol !== "Administrador") {
+        if (user.rol === "Profesor") {
+          router.replace("/profesor");
+        } else {
+          router.replace("/loading");
+        }
+      }
     }
   }, [isInitializing, router, user]);
 
@@ -81,6 +92,27 @@ export default function AdminSectionPage() {
     setEstudiantes(getEstudiantesFromStorage());
     setDocentes(getDocentesFromStorage());
     setIsLoaded(true);
+  }, []);
+
+  // Notas y citas (admin view)
+  const [notas, setNotas] = useState<any[]>([]);
+  const [citas, setCitas] = useState<any[]>([]);
+  const [visibleNotasFor, setVisibleNotasFor] = useState<string | null>(null);
+
+  // Credenciales de profesor creado
+  const [lastCreatedAccount, setLastCreatedAccount] = useState<{ email: string; password: string } | null>(null);
+
+  useEffect(() => {
+    // Lazy-load notas/citas if available
+    try {
+      // dynamic imports from adminData helpers
+      const { getNotasFromStorage, getCitasFromStorage } = require("../../lib/adminData");
+      setNotas(getNotasFromStorage());
+      setCitas(getCitasFromStorage());
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn("No hay notas o citas cargadas aún.", e);
+    }
   }, []);
 
   useEffect(() => {
@@ -106,6 +138,19 @@ export default function AdminSectionPage() {
 
     saveDocentesToStorage(docentes);
   }, [docentes, isLoaded]);
+
+  // persist notas and citas when they change
+  useEffect(() => {
+    if (!isLoaded) return;
+    try {
+      const { saveNotasToStorage, saveCitasToStorage } = require("../../lib/adminData");
+      saveNotasToStorage(notas);
+      saveCitasToStorage(citas);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn("No se pudo guardar notas/citas.", e);
+    }
+  }, [notas, citas, isLoaded]);
 
   const validateCurso = (): boolean => {
     const errors: FormErrors = {};
@@ -227,7 +272,26 @@ export default function AdminSectionPage() {
       if (!validateDocente()) {
         return;
       }
-      setDocentes((current) => [...current, getNewDocente({ ...docenteForm })]);
+
+      const newDocente = getNewDocente({ ...docenteForm });
+      setDocentes((current) => [...current, newDocente]);
+
+      // Crear cuenta de usuario para el docente con contraseña genérica
+      try {
+        const result = addUserAccount({ nombre: newDocente.nombre, email: newDocente.correo, rol: "Profesor" });
+        if ("error" in result) {
+          // No interrumpimos la creación del docente en la lista, solo informamos
+          // eslint-disable-next-line no-console
+          console.warn("No se creó cuenta de usuario:", result.error);
+        } else {
+          // Mostrar la contraseña generada al administrador en un panel
+          setLastCreatedAccount({ email: result.user.email, password: result.password });
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error(e);
+      }
+
       setDocenteForm({
         nombre: "",
         materia: "",
@@ -289,6 +353,40 @@ export default function AdminSectionPage() {
       </header>
 
       <main className={styles.main}>
+        {lastCreatedAccount && (
+          <div style={{ maxWidth: "1100px", margin: "0 auto 2rem", padding: "1.5rem", background: "#ecfdf5", border: "2px solid #10b981", borderRadius: "14px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "1rem" }}>
+              <div>
+                <h3 style={{ margin: "0 0 0.5rem 0", color: "#059669" }}>✓ Profesor creado exitosamente</h3>
+                <div style={{ marginBottom: "0.5rem" }}>
+                  <strong>Correo institucional:</strong> <code style={{ background: "white", padding: "0.25rem 0.5rem", borderRadius: "4px", fontFamily: "monospace" }}>{lastCreatedAccount.email}</code>
+                </div>
+                <div>
+                  <strong>Contraseña temporal:</strong> <code style={{ background: "white", padding: "0.25rem 0.5rem", borderRadius: "4px", fontFamily: "monospace" }}>{lastCreatedAccount.password}</code>
+                </div>
+                <p style={{ margin: "0.75rem 0 0 0", fontSize: "0.85rem", color: "#047857" }}>Comparte estas credenciales con el profesor para que pueda acceder a la intranet.</p>
+              </div>
+              <div style={{ display: "flex", gap: "0.75rem" }}>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${lastCreatedAccount.email}\n${lastCreatedAccount.password}`);
+                    // eslint-disable-next-line no-alert
+                    alert("Credenciales copiadas al portapapeles");
+                  }}
+                  style={{ padding: "0.75rem 1rem", background: "#10b981", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "600" }}
+                >
+                  Copiar
+                </button>
+                <button
+                  onClick={() => setLastCreatedAccount(null)}
+                  style={{ padding: "0.75rem 1rem", background: "transparent", color: "#059669", border: "1px solid #10b981", borderRadius: "8px", cursor: "pointer", fontWeight: "600" }}
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className={styles.listCard}>
           {activeSection === "Sala de Computación" ? (
             <SalaComputacionPanel />
@@ -547,11 +645,76 @@ export default function AdminSectionPage() {
                         <p>Fecha de nacimiento: {new Date(estudiante.fechaNacimiento).toLocaleDateString("es-CL")}</p>
                         <p>Correo: {estudiante.correo}</p>
                       </div>
-                      <button className={styles.deleteButton} onClick={() => handleDeleteEstudiante(estudiante.id)}>
-                        Eliminar
-                      </button>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button className={styles.deleteButton} onClick={() => handleDeleteEstudiante(estudiante.id)}>
+                          Eliminar
+                        </button>
+                        <button className={styles.actionButton} onClick={() => setVisibleNotasFor(visibleNotasFor === estudiante.id ? null : estudiante.id)}>
+                          Ver Notas
+                        </button>
+                      </div>
+
+                      {visibleNotasFor === estudiante.id && (
+                        <div style={{ marginTop: 8 }}>
+                          <h4>Notas</h4>
+                          {notas.filter((n) => n.estudianteId === estudiante.id).length === 0 ? (
+                            <p>No hay notas para este alumno.</p>
+                          ) : (
+                            notas
+                              .filter((n) => n.estudianteId === estudiante.id)
+                              .map((n) => (
+                                <article key={n.id} style={{ borderTop: "1px solid #eee", paddingTop: 8, marginTop: 8 }}>
+                                  <div style={{ fontSize: 12, color: "#666" }}>{new Date(n.fecha).toLocaleString()}</div>
+                                  <div>{n.texto}</div>
+                                </article>
+                              ))
+                          )}
+                        </div>
+                      )}
                     </article>
                   ))}
+
+                {/* Admin: listado de citas recibidas */}
+                {activeSection === "Estudiantes" && (
+                  <section style={{ marginTop: 16 }}>
+                    <div className={styles.listHeader}>
+                      <h2>Citas recibidas</h2>
+                      <p>Solicitudes de citación agendadas por profesores.</p>
+                    </div>
+                    <div>
+                      {citas.length === 0 ? (
+                        <p>No hay citas registradas.</p>
+                      ) : (
+                        citas.map((c) => {
+                          const estudiante = estudiantes.find((s) => s.id === c.estudianteId);
+                          const docente = docentes.find((d) => d.id === c.profesorId);
+                          return (
+                            <article key={c.id} className={styles.listItem} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <div>
+                                <div><strong>Alumno:</strong> {estudiante ? estudiante.nombre : c.estudianteId}</div>
+                                <div><strong>Profesor:</strong> {docente ? docente.nombre : c.profesorId}</div>
+                                <div><strong>Fecha:</strong> {c.fecha} {c.hora}</div>
+                                <div><strong>Motivo:</strong> {c.motivo}</div>
+                                <div><strong>Estado:</strong> {c.estado}</div>
+                              </div>
+                              <div style={{ display: "flex", gap: 8 }}>
+                                <button onClick={() => {
+                                  setCitas((cur) => cur.map((item) => item.id === c.id ? { ...item, estado: "Agendada" } : item));
+                                }}>Aprobar</button>
+                                <button onClick={() => {
+                                  setCitas((cur) => cur.map((item) => item.id === c.id ? { ...item, estado: "Cancelada" } : item));
+                                }}>Rechazar</button>
+                                <button onClick={() => {
+                                  setCitas((cur) => cur.map((item) => item.id === c.id ? { ...item, estado: "Completada" } : item));
+                                }}>Marcar Completada</button>
+                              </div>
+                            </article>
+                          );
+                        })
+                      )}
+                    </div>
+                  </section>
+                )}
 
                 {activeSection === "Docentes" &&
                   docentes.map((docente) => (

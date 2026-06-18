@@ -14,7 +14,13 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      router.replace("/admin_section");
+      if (user.rol === "Administrador") {
+        router.replace("/admin_section");
+      } else if (user.rol === "Profesor") {
+        router.replace("/profesor");
+      } else {
+        router.replace("/loading");
+      }
     }
   }, [user, router]);
 
@@ -32,7 +38,23 @@ export default function LoginPage() {
     }
 
     setError("");
-    router.replace("/admin_section");
+    // Determinar ruta según rol del usuario autenticado
+    try {
+      // evitar dependencias circulares: obtener usuario desde storage
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { getUsersFromStorage } = require("../../lib/auth");
+      const users = getUsersFromStorage();
+      const u = users.find((x: any) => x.email === email.trim());
+      if (u?.rol === "Administrador") {
+        router.replace("/admin_section");
+      } else if (u?.rol === "Profesor") {
+        router.replace("/profesor");
+      } else {
+        router.replace("/loading");
+      }
+    } catch (e) {
+      router.replace("/admin_section");
+    }
   };
 
   return (

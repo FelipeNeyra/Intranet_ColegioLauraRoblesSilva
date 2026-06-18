@@ -38,6 +38,24 @@ export interface ReservaSala {
   estado: "Pendiente" | "Aprobada" | "Rechazada";
 }
 
+export interface Nota {
+  id: string;
+  estudianteId: string;
+  profesorId: string;
+  fecha: string;
+  texto: string;
+}
+
+export interface Cita {
+  id: string;
+  estudianteId: string;
+  profesorId: string;
+  fecha: string; // ISO date
+  hora: string; // e.g. "14:30"
+  motivo: string;
+  estado: "Agendada" | "Completada" | "Cancelada";
+}
+
 export interface HorarioBloqueado {
   id: string;
   fecha: string;
@@ -50,6 +68,8 @@ const ESTUDIANTES_STORAGE_KEY = "intranet_estudiantes";
 const DOCENTES_STORAGE_KEY = "intranet_docentes";
 const RESERVAS_SALA_STORAGE_KEY = "intranet_reservas_sala";
 const HORARIOS_BLOQUEADOS_STORAGE_KEY = "intranet_horarios_bloqueados";
+const NOTAS_STORAGE_KEY = "intranet_notas";
+const CITAS_STORAGE_KEY = "intranet_citas";
 
 const getStorageValue = <T>(key: string, fallback: T): T => {
   if (typeof window === "undefined") {
@@ -92,6 +112,12 @@ export const getReservaSalaFromStorage = (): ReservaSala[] =>
 export const getHorarioBloqueadoFromStorage = (): HorarioBloqueado[] =>
   getStorageValue<HorarioBloqueado[]>(HORARIOS_BLOQUEADOS_STORAGE_KEY, []);
 
+export const getNotasFromStorage = (): Nota[] =>
+  getStorageValue<Nota[]>(NOTAS_STORAGE_KEY, []);
+
+export const getCitasFromStorage = (): Cita[] =>
+  getStorageValue<Cita[]>(CITAS_STORAGE_KEY, []);
+
 export const saveCursosToStorage = (cursos: Curso[]): void =>
   setStorageValue(CURSOS_STORAGE_KEY, cursos);
 
@@ -106,6 +132,12 @@ export const saveReservaSalaToStorage = (reservas: ReservaSala[]): void =>
 
 export const saveHorarioBloqueadoToStorage = (bloqueos: HorarioBloqueado[]): void =>
   setStorageValue(HORARIOS_BLOQUEADOS_STORAGE_KEY, bloqueos);
+
+export const saveNotasToStorage = (notas: Nota[]): void =>
+  setStorageValue(NOTAS_STORAGE_KEY, notas);
+
+export const saveCitasToStorage = (citas: Cita[]): void =>
+  setStorageValue(CITAS_STORAGE_KEY, citas);
 
 export const seedInitialAdminData = (): void => {
   if (typeof window === "undefined") {
@@ -195,6 +227,8 @@ export const getNewEstudiante = (partial: Omit<Estudiante, "id">): Estudiante =>
 export const getNewDocente = (partial: Omit<Docente, "id">): Docente => ({ id: generateId(), ...partial });
 export const getNewReservaSala = (partial: Omit<ReservaSala, "id">): ReservaSala => ({ id: generateId(), ...partial });
 export const getNewHorarioBloqueado = (partial: Omit<HorarioBloqueado, "id">): HorarioBloqueado => ({ id: generateId(), ...partial });
+export const getNewNota = (partial: Omit<Nota, "id">): Nota => ({ id: generateId(), ...partial });
+export const getNewCita = (partial: Omit<Cita, "id">): Cita => ({ id: generateId(), ...partial });
 
 export const validateEmail = (email: string): boolean => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);

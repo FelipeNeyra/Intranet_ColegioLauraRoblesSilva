@@ -59,8 +59,19 @@ export function SalaComputacionPanel() {
   const [weekStart, setWeekStart] = useState<string>(getToday());
 
   useEffect(() => {
+    // Carga inicial
     setReservas(getReservaSalaFromStorage());
     setBloqueos(getHorarioBloqueadoFromStorage());
+  }, []);
+
+  // Sincronización en tiempo real cada 2 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setReservas(getReservaSalaFromStorage());
+      setBloqueos(getHorarioBloqueadoFromStorage());
+    }, 2000);
+
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -261,7 +272,7 @@ export function SalaComputacionPanel() {
                   <span>{date.slice(5)}</span>
                 </div>
                 {timeSlots.map((slot) => {
-                  const reserva = dayReservas.find((item) => slot >= item.horaInicio && slot < item.horaFin);
+                  const reserva = dayReservas.find((item) => slot >= item.horaInicio && slot < item.horaFin && item.estado === "Aprobada");
                   const bloqueo = dayBloqueos.find((item) => item.hora === slot);
                   const isBlocked = Boolean(bloqueo);
                   const isOccupied = Boolean(reserva);

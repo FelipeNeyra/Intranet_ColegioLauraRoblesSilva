@@ -1,0 +1,310 @@
+:root {
+  --color-rojo: #db353d;
+  --fondo-claro: #f7f5f4;
+  --texto-principal: #1f2937;
+  --texto-secundario: #475569;
+  --borde-claro: #d4d4d4;
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--fondo-claro);
+  color: var(--texto-principal);
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 16px;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  background: #ffffff;
+  border-bottom: 1px solid var(--borde-claro);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background-color: var(--color-rojo);
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.header h1 {
+  font-size: 1.6rem;
+  margin-bottom: 0.2rem;
+  font-family: 'League Spartan', sans-serif;
+}
+
+.header p {
+  color: var(--texto-secundario);
+  font-size: 0.95rem;
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.navLink,
+.logoutLink {
+  border: 1px solid var(--color-rojo);
+  color: var(--color-rojo);
+  background: transparent;
+  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.navLink:hover,
+.logoutLink:hover,
+.activeLink {
+  background-color: var(--color-rojo);
+  color: white;
+}
+
+.logoutLink {
+  border-color: #6b7280;
+  color: #6b7280;
+}
+
+.logoutLink:hover {
+  background-color: #6b7280;
+}
+
+.main {
+  flex: 1;
+  padding: 2rem;
+}
+
+.card {
+  max-width: 1100px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+}
+
+.sectionHeader {
+  margin-bottom: 1.5rem;
+}
+
+.sectionHeader h2 {
+  font-size: 1.5rem;
+  color: var(--color-rojo);
+  margin-bottom: 0.5rem;
+  font-family: 'League Spartan', sans-serif;
+}
+
+.sectionHeader p {
+  color: var(--texto-secundario);
+  font-size: 0.95rem;
+}
+
+.listContainer {
+  display: grid;
+  gap: 1rem;
+}
+
+.listItem {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  transition: all 0.2s ease, box-shadow 0.2s ease;
+}
+
+.listItem:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #d1d5db;
+  background: #ffffff;
+}
+
+.listItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.listItemInfo h3 {
+  margin-bottom: 0.6rem;
+  font-size: 1.05rem;
+}
+
+.listItemInfo p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--texto-secundario);
+  line-height: 1.4;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actionButton,
+.deleteButton,
+.secondaryButton {
+  min-height: 46px;
+  border: none;
+  border-radius: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  padding: 0.75rem 1rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.actionButton {
+  background: var(--color-rojo);
+  color: white;
+}
+
+.actionButton:hover,
+.deleteButton:hover,
+.secondaryButton:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+.deleteButton {
+  background: #ef4444;
+  color: white;
+}
+
+.secondaryButton {
+  background: transparent;
+  color: var(--color-rojo);
+  border: 1px solid var(--color-rojo);
+}
+
+.secondaryButton:hover {
+  background-color: var(--color-rojo);
+  color: white;
+}
+
+.formContainer {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.formRow {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.input,
+.textareaField {
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: var(--texto-principal);
+  font-family: inherit;
+  width: 100%;
+}
+
+.textareaField {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.input:focus,
+.textareaField:focus {
+  outline: none;
+  border-color: var(--color-rojo);
+  box-shadow: 0 0 0 3px rgba(219, 53, 61, 0.12);
+}
+
+.formActions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.notasContainer {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 12px;
+}
+
+.notasContainer h4 {
+  margin-bottom: 0.75rem;
+  color: var(--texto-principal);
+}
+
+.notaItem {
+  padding: 0.75rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+}
+
+.notaItem > div:first-child {
+  font-size: 0.8rem;
+  color: var(--texto-secundario);
+  margin-bottom: 0.25rem;
+}
+
+.reservaItem {
+  padding: 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  margin-bottom: 0.75rem;
+}
+
+.reservaItem > div {
+  margin: 0.25rem 0;
+  font-size: 0.95rem;
+}
+
+.reservaItemStrong {
+  color: var(--texto-principal);
+  font-weight: 600;
+}
+
+.footer {
+  text-align: center;
+  padding: 1.5rem 2rem;
+  border-top: 1px solid var(--borde-claro);
+  background: #ffffff;
+  color: var(--texto-secundario);
+  font-size: 0.9rem;
+}
