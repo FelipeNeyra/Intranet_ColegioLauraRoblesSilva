@@ -13,6 +13,7 @@
   background-color: var(--fondo-claro);
   color: var(--texto-principal);
   font-family: 'Segoe UI', sans-serif;
+  font-size: 16px;
 }
 
 .header {
@@ -99,7 +100,7 @@
   padding: 2rem;
 }
 
-.listCard {
+.card {
   max-width: 1100px;
   margin: 0 auto;
   background: white;
@@ -108,19 +109,20 @@
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
 }
 
-.listHeader {
+.sectionHeader {
   margin-bottom: 1.5rem;
 }
 
-.listHeader h2 {
-  font-size: 2rem;
+.sectionHeader h2 {
+  font-size: 1.5rem;
   color: var(--color-rojo);
   margin-bottom: 0.5rem;
   font-family: 'League Spartan', sans-serif;
 }
 
-.listHeader p {
+.sectionHeader p {
   color: var(--texto-secundario);
+  font-size: 0.95rem;
 }
 
 .listContainer {
@@ -130,7 +132,7 @@
 
 .listItem {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 1rem;
   padding: 1.25rem;
   background: #fafafa;
@@ -145,116 +147,18 @@
   background: #ffffff;
 }
 
-.addForm {
-  display: grid;
-  gap: 1rem;
-  margin-bottom: 1.75rem;
-  padding: 1rem 0;
-  border-bottom: 1px solid #e5e7eb;
+.listItemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
-.inputRow {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.inputRow label {
-  color: var(--texto-secundario);
-  font-size: 0.95rem;
-}
-
-.input {
-  width: 100%;
-  min-height: 44px;
-  padding: 0.75rem 1rem;
-  border-radius: 14px;
-  border: 1px solid #d1d5db;
-  background-color: #ffffff;
-  color: var(--texto-principal);
-  font-family: inherit;
-}
-
-.input:focus {
-  outline: none;
-  border-color: var(--color-rojo);
-  box-shadow: 0 0 0 3px rgba(219, 53, 61, 0.12);
-}
-
-.error {
-  display: block;
-  margin-top: 0.35rem;
-  color: #b91c1c;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.actionButton,
-.deleteButton {
-  min-height: 46px;
-  border: none;
-  border-radius: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.actionButton {
-  background: var(--color-rojo);
-  color: white;
-  width: fit-content;
-  padding: 0 1rem;
-}
-
-.actionButton:hover,
-.deleteButton:hover {
-  opacity: 0.95;
-  transform: translateY(-1px);
-}
-
-.secondaryButton {
-  padding: 0.75rem 1rem;
-  background: #f0f0f0;
-  color: #333;
-  border: 1px solid #ddd;
-  border-radius: 14px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background 0.2s;
-  min-height: 46px;
-  border: none;
-}
-
-.secondaryButton:hover {
-  background: #e0e0e0;
-  transform: translateY(-1px);
-}
-
-.deleteButton {
-  background: #ef4444;
-  color: white;
-  padding: 0.75rem 1rem;
-  white-space: nowrap;
-  flex-shrink: 0;
-  height: fit-content;
-}
-
-.actionButton:hover,
-.deleteButton:hover {
-  opacity: 0.95;
-  transform: translateY(-1px);
-}
-
-
-.listItem > div {
-  flex: 1;
-}
-
-.listItem h3 {
+.listItemInfo h3 {
   margin-bottom: 0.6rem;
   font-size: 1.05rem;
 }
 
-.listItem p {
+.listItemInfo p {
   margin: 0.25rem 0;
   font-size: 0.9rem;
   font-weight: 500;
@@ -262,48 +166,145 @@
   line-height: 1.4;
 }
 
-.listItem p strong {
+.buttonGroup {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actionButton,
+.deleteButton,
+.secondaryButton {
+  min-height: 46px;
+  border: none;
+  border-radius: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  padding: 0.75rem 1rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.actionButton {
+  background: var(--color-rojo);
+  color: white;
+}
+
+.actionButton:hover,
+.deleteButton:hover,
+.secondaryButton:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+.deleteButton {
+  background: #ef4444;
+  color: white;
+}
+
+.secondaryButton {
+  background: transparent;
+  color: var(--color-rojo);
+  border: 1px solid var(--color-rojo);
+}
+
+.secondaryButton:hover {
+  background-color: var(--color-rojo);
+  color: white;
+}
+
+.formContainer {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.formRow {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.input,
+.textareaField {
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: var(--texto-principal);
+  font-family: inherit;
+  width: 100%;
+}
+
+.textareaField {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.input:focus,
+.textareaField:focus {
+  outline: none;
+  border-color: var(--color-rojo);
+  box-shadow: 0 0 0 3px rgba(219, 53, 61, 0.12);
+}
+
+.formActions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.notasContainer {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 12px;
+}
+
+.notasContainer h4 {
+  margin-bottom: 0.75rem;
   color: var(--texto-principal);
 }
 
-.footer {
-  padding: 1.5rem 2rem;
-  text-align: center;
+.notaItem {
+  padding: 0.75rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+}
+
+.notaItem > div:first-child {
+  font-size: 0.8rem;
   color: var(--texto-secundario);
-  background: white;
-  border-top: 1px solid var(--borde-claro);
+  margin-bottom: 0.25rem;
 }
 
-.loadingCard {
-  max-width: 780px;
-  margin: 6rem auto;
-  padding: 2rem;
-  background: white;
-  border-radius: 24px;
+.reservaItem {
+  padding: 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  margin-bottom: 0.75rem;
+}
+
+.reservaItem > div {
+  margin: 0.25rem 0;
+  font-size: 0.95rem;
+}
+
+.reservaItemStrong {
+  color: var(--texto-principal);
+  font-weight: 600;
+}
+
+.footer {
   text-align: center;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
-}
-
-@media (max-width: 860px) {
-  .header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .nav {
-    justify-content: flex-start;
-  }
-
-  .main,
-  .footer {
-    padding: 1.25rem;
-  }
-}
-
-@media (max-width: 620px) {
-  .navLink,
-  .logoutLink {
-    width: 100%;
-    justify-content: center;
-  }
+  padding: 1.5rem 2rem;
+  border-top: 1px solid var(--borde-claro);
+  background: #ffffff;
+  color: var(--texto-secundario);
+  font-size: 0.9rem;
 }

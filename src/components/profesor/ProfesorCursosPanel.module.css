@@ -1,0 +1,283 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.panel h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.primaryButton {
+  padding: 10px 16px;
+  background: #db353d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.primaryButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(219, 53, 61, 0.4);
+}
+
+.secondaryButton {
+  padding: 10px 16px;
+  background: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.secondaryButton:hover {
+  background: #e0e0e0;
+}
+
+.empty {
+  color: #999;
+  font-style: italic;
+  margin: 20px 0;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.cursosContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cursoCard {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.cursoHeader {
+  width: 100%;
+  padding: 16px;
+  background: #db353d;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.cursoHeader:hover {
+  opacity: 0.9;
+}
+
+.cursoHeader h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.toggle {
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.cursoContent {
+  padding: 16px;
+}
+
+.estudiantes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.estudianteCard {
+  background: #f9f9f9;
+  border: 1px solid #efefef;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.estudianteInfo {
+  margin-bottom: 12px;
+}
+
+.estudianteInfo h4 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 15px;
+}
+
+.estudianteInfo p {
+  margin: 4px 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.estudianteActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.actionButton {
+  padding: 8px 12px;
+  background: #db353d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.actionButton:hover {
+  background: #c1292e;
+}
+
+.calificacionForm,
+.citaForm {
+  background: #fef5f5;
+  border: 1px solid #f5d8da;
+  border-radius: 4px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.formGroup label {
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+.input,
+.textarea {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: #db353d;
+  box-shadow: 0 0 0 3px rgba(219, 53, 61, 0.1);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.formActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.calificacionesList,
+.citasList {
+  background: #f0f9ff;
+  border: 1px solid #e0f2fe;
+  border-radius: 4px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.calificacionesList h5,
+.citasList h5 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #0369a1;
+}
+
+.calificacionItem,
+.citaItem {
+  background: white;
+  padding: 8px;
+  border-radius: 3px;
+  margin-bottom: 6px;
+  border-left: 3px solid #0369a1;
+}
+
+.calificacionItem p,
+.citaItem p {
+  margin: 4px 0;
+  font-size: 12px;
+}
+
+.description {
+  color: #666;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .panel {
+    padding: 16px;
+  }
+
+  .cursoHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .badge,
+  .toggle {
+    margin-left: 0;
+  }
+
+  .estudianteActions {
+    flex-direction: column;
+  }
+
+  .actionButton {
+    width: 100%;
+  }
+}

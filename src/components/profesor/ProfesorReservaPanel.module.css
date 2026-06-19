@@ -1,0 +1,350 @@
+.panel {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.headerRow h3 {
+  margin: 0 0 0.25rem 0;
+  color: #1f2937;
+  font-size: 1.25rem;
+}
+
+.headerRow p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.statusMessage {
+  margin: 0.75rem 0 0 0;
+  color: #15803d;
+  font-size: 0.93rem;
+  background: #d1fae5;
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  border: 1px solid #a7f3d0;
+}
+
+.weekControls {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.navButton {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid #dc2626;
+  background: #ffffff;
+  color: #b91c1c;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.navButton:hover {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.navButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+}
+
+.scheduleSection {
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 1rem;
+  background: #fafafa;
+}
+
+.scheduleHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.scheduleHeader h4 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 1.05rem;
+}
+
+.scheduleHeader span {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.legendRow {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legendBox {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+.legendBox.available {
+  background: #ecfdf3;
+  border: 1px solid #10b981;
+}
+
+.legendBox.pending {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+}
+
+.legendBox.blocked {
+  background: #e5e7eb;
+}
+
+.legendBox.occupied {
+  background: #fef2f2;
+  border: 1px solid #ef4444;
+}
+
+.slotPending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.weekGrid {
+  display: grid;
+  grid-template-columns: 90px repeat(5, minmax(140px, 1fr));
+  gap: 0.5rem;
+  margin-top: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.timeColumn,
+.dayColumn {
+  display: grid;
+  grid-template-rows: 54px repeat(10, 58px);
+  gap: 0.5rem;
+}
+
+.timeHeader,
+.dayHeader {
+  min-height: 54px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.dayHeader strong {
+  font-weight: 700;
+}
+
+.timeCell {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem;
+  font-size: 0.78rem;
+  text-align: center;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+.slotCard {
+  min-height: 58px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  text-align: center;
+  transition: all 0.2s ease;
+  font-weight: 600;
+  padding: 0.4rem;
+}
+
+.slotCard:disabled {
+  cursor: not-allowed;
+}
+
+.slotFree {
+  background: #ecfdf3;
+  color: #166534;
+}
+
+.slotFree:hover:not(:disabled) {
+  background: #d1fae5;
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.slotOccupied {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.slotBlocked {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.slotSelected {
+  background: #db353d;
+  color: white;
+  box-shadow: 0 4px 12px rgba(219, 53, 61, 0.3);
+}
+
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.modalContent h4 {
+  margin: 0 0 0.5rem 0;
+  color: #1f2937;
+  font-size: 1.25rem;
+}
+
+.selectedSlotInfo {
+  margin: 0.5rem 0 1.5rem 0;
+  color: #db353d;
+  font-size: 0.95rem;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.input {
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: #1f2937;
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #db353d;
+  box-shadow: 0 0 0 3px rgba(219, 53, 61, 0.12);
+}
+
+.textareaField {
+  min-height: 80px;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: #1f2937;
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+  margin-bottom: 1rem;
+}
+
+.textareaField:focus {
+  outline: none;
+  border-color: #db353d;
+  box-shadow: 0 0 0 3px rgba(219, 53, 61, 0.12);
+}
+
+.modalActions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.confirmButton,
+.cancelButton {
+  flex: 1;
+  min-height: 46px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.confirmButton {
+  background: #db353d;
+  color: white;
+}
+
+.confirmButton:hover:not(:disabled) {
+  background: #c92a2f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(219, 53, 61, 0.2);
+}
+
+.confirmButton:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  background: transparent;
+  color: #db353d;
+  border: 1px solid #db353d;
+}
+
+.cancelButton:hover {
+  background: #db353d;
+  color: white;
+}

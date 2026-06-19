@@ -1,0 +1,303 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import styles from "./ProfesorReservaPanel.module.css";
+import {
+  HorarioBloqueado,
+  ReservaSala,
+  getNewReservaSala,
+} from "../../lib/adminData";
+
+const timeSlots = [
+  "08:00",
+  "09:00",
+  "10:00",
+  "11:00",
+  "12:00",
+  "13:00",
+  "14:00",
+  "15:00",
+  "16:00",
+  "17:00",
+];
+
+const weekDays = [
+  { key: "Lunes", label: "Lun" },
+  { key: "Martes", label: "Mar" },
+  { key: "Miércoles", label: "Mié" },
+  { key: "Jueves", label: "Jue" },
+  { key: "Viernes", label: "Vie" },
+];
+
+const getWeekDates = (baseDate: Date) => {
+  const start = new Date(baseDate);
+  const day = start.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  start.setDate(start.getDate() + diff);
+
+  return weekDays.map((_, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    return date.toISOString().slice(0, 10);
+  });
+};
+
+const getToday = (): string => new Date().toISOString().slice(0, 10);
+
+interface ProfesorReservaPanelProps {
+  userName: string;
+  userEmail: string;
+  reservas: ReservaSala[];
+  bloqueos: HorarioBloqueado[];
+  onReservaCreada: (reserva: ReservaSala) => void;
+}
+
+export function ProfesorReservaPanel({
+  userName,
+  userEmail,
+  reservas,
+  bloqueos,
+  onReservaCreada,
+}: ProfesorReservaPanelProps) {
+  const [weekStart, setWeekStart] = useState<string>(getToday());
+  const [selectedSlot, setSelectedSlot] = useState<{ fecha: string; hora: string } | null>(null);
+  const [curso, setCurso] = useState("");
+  const [personas, setPersonas] = useState("");
+  const [motivo, setMotivo] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
+
+  const weekDates = useMemo(() => getWeekDates(new Date(weekStart)), [weekStart]);
+
+  const getReservasByDate = (date: string) =>
+    reservas.filter((reserva) => reserva.fecha === date);
+
+  const getBloqueosByDate = (date: string) =>
+    bloqueos.filter((bloqueo) => bloqueo.fecha === date);
+
+  const goToPreviousWeek = () => {
+    const current = new Date(weekStart);
+    current.setDate(current.getDate() - 7);
+    setWeekStart(current.toISOString().slice(0, 10));
+  };
+
+  const goToNextWeek = () => {
+    const current = new Date(weekStart);
+    current.setDate(current.getDate() + 7);
+    setWeekStart(current.toISOString().slice(0, 10));
+  };
+
+  const handleSlotClick = (fecha: string, hora: string) => {
+    const dayReservas = getReservasByDate(fecha);
+    const dayBloqueos = getBloqueosByDate(fecha);
+
+    const isBlocked = dayBloqueos.some((bloqueo) => bloqueo.hora === hora);
+    const isOccupied = dayReservas.some((reserva) => hora >= reserva.horaInicio && hora < reserva.horaFin);
+
+    if (!isBlocked && !isOccupied) {
+      setSelectedSlot({ fecha, hora });
+      setCurso("");
+      setPersonas("");
+      setMotivo("");
+      setStatusMessage("");
+    }
+  };
+
+  const handleCrearReserva = () => {
+    if (!selectedSlot || !curso.trim() || !personas.trim() || !motivo.trim()) {
+      return;
+    }
+
+    const horaFin = String(parseInt(selectedSlot.hora) + 1).padStart(2, "0") + ":00";
+
+    const nuevaReserva = getNewReservaSala({
+      nombre: userName.split(" ")[0],
+      apellido: userName.split(" ").slice(1).join(" ") || "",
+      rut: "",
+      correo: userEmail,
+      fecha: selectedSlot.fecha,
+      horaInicio: selectedSlot.hora,
+      horaFin,
+      curso: curso.trim(),
+      personas: personas.trim(),
+      motivo: motivo.trim(),
+      estado: "Pendiente",
+    });
+
+    // Solo notificar al padre, quien se encarga de guardar
+    onReservaCreada(nuevaReserva);
+    setSelectedSlot(null);
+    setCurso("");
+    setPersonas("");
+    setMotivo("");
+    setStatusMessage(
+      "Solicitud guardada. Queda en estado Pendiente y el administrador podrá aprobar o rechazar la reserva."
+    );
+  };
+
+  return (
+    <section className={styles.panel}>
+      <div className={styles.headerRow}>
+        <div>
+          <h3>Reserva de Sala de Computación</h3>
+          <p>Selecciona un horario disponible haciendo clic en las celdas verdes.</p>
+          {statusMessage && <p className={styles.statusMessage}>{statusMessage}</p>}
+        </div>
+        <div className={styles.weekControls}>
+          <button type="button" className={styles.navButton} onClick={goToPreviousWeek}>
+            ←
+          </button>
+          <button type="button" className={styles.navButton} onClick={goToNextWeek}>
+            →
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.scheduleSection}>
+        <div className={styles.scheduleHeader}>
+          <h4>Vista semanal</h4>
+          <span>{weekDates[0]} — {weekDates[weekDates.length - 1]}</span>
+        </div>
+
+        <div className={styles.legendRow}>
+          <div className={styles.legendItem}>
+            <span className={`${styles.legendBox} ${styles.available}`}></span>
+            <span>Disponible</span>
+          </div>
+          <div className={styles.legendItem}>
+            <span className={`${styles.legendBox} ${styles.pending}`}></span>
+            <span>Pendiente</span>
+          </div>
+          <div className={styles.legendItem}>
+            <span className={`${styles.legendBox} ${styles.blocked}`}></span>
+            <span>Bloqueado</span>
+          </div>
+          <div className={styles.legendItem}>
+            <span className={`${styles.legendBox} ${styles.occupied}`}></span>
+            <span>Aprobado</span>
+          </div>
+        </div>
+
+        <div className={styles.weekGrid}>
+          <div className={styles.timeColumn}>
+            <div className={styles.timeHeader}>Hora</div>
+            {timeSlots.map((slot) => (
+              <div key={slot} className={styles.timeCell}>
+                {slot}
+              </div>
+            ))}
+          </div>
+
+          {weekDates.map((date) => {
+            const dayName = new Date(date).toLocaleDateString("es-CL", { weekday: "long" });
+            const dayLabel = weekDays[weekDates.indexOf(date)]?.label || "";
+            const dayReservas = getReservasByDate(date);
+            const dayBloqueos = getBloqueosByDate(date);
+
+            return (
+              <div key={date} className={styles.dayColumn}>
+                <div className={styles.dayHeader}>
+                  <strong>{dayLabel}</strong>
+                  <span>{date.slice(5)}</span>
+                </div>
+                {timeSlots.map((slot) => {
+                  const reservaAprobada = dayReservas.find(
+                    (item) => slot >= item.horaInicio && slot < item.horaFin && item.estado === "Aprobada"
+                  );
+                  const reservaPendiente = dayReservas.find(
+                    (item) => slot >= item.horaInicio && slot < item.horaFin && item.estado === "Pendiente"
+                  );
+                  const bloqueo = dayBloqueos.find((item) => item.hora === slot);
+                  const isBlocked = Boolean(bloqueo);
+                  const isPending = Boolean(reservaPendiente);
+                  const isOccupied = Boolean(reservaAprobada) || isPending;
+                  const isSelected = selectedSlot?.fecha === date && selectedSlot?.hora === slot;
+
+                  const slotClass = isBlocked
+                    ? styles.slotBlocked
+                    : isPending
+                    ? styles.slotPending
+                    : isOccupied
+                    ? styles.slotOccupied
+                    : styles.slotFree;
+
+                  const slotLabel = isBlocked
+                    ? "Bloqueado"
+                    : isPending
+                    ? "Pendiente"
+                    : isOccupied
+                    ? "Ocupado"
+                    : "Libre";
+
+                  return (
+                    <button
+                      key={`${date}-${slot}`}
+                      type="button"
+                      className={`${styles.slotCard} ${slotClass} ${isSelected ? styles.slotSelected : ""}`}
+                      onClick={() => handleSlotClick(date, slot)}
+                      disabled={isBlocked || isOccupied}
+                    >
+                      {slotLabel}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {selectedSlot && (
+        <div className={styles.modalOverlay} onClick={() => setSelectedSlot(null)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <h4>Detalles de la Reserva</h4>
+            <p className={styles.selectedSlotInfo}>
+              <strong>{selectedSlot.fecha}</strong> • <strong>{selectedSlot.hora}</strong>
+            </p>
+
+            <div className={styles.formRow}>
+              <input
+                type="text"
+                placeholder="Curso"
+                value={curso}
+                onChange={(e) => setCurso(e.target.value)}
+                className={styles.input}
+              />
+              <input
+                type="text"
+                placeholder="Cantidad de personas"
+                value={personas}
+                onChange={(e) => setPersonas(e.target.value)}
+                className={styles.input}
+              />
+            </div>
+
+            <textarea
+              placeholder="Motivo de la reserva"
+              value={motivo}
+              onChange={(e) => setMotivo(e.target.value)}
+              className={styles.textareaField}
+            />
+
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                onClick={handleCrearReserva}
+                className={styles.confirmButton}
+                disabled={!curso.trim() || !personas.trim() || !motivo.trim()}
+              >
+                Confirmar Reserva
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedSlot(null)}
+                className={styles.cancelButton}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}

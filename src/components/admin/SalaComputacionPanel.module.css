@@ -196,6 +196,11 @@
   color: #166534;
 }
 
+.slotPending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
 .slotOccupied {
   background: #fef2f2;
   color: #991b1b;

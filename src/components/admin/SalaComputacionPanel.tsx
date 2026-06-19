@@ -54,19 +54,34 @@ export function SalaComputacionPanel() {
   const [search, setSearch] = useState("");
   const [bloqueoForm, setBloqueoForm] = useState({ hora: timeSlots[0], motivo: "", fecha: getToday() });
   const [weekStart, setWeekStart] = useState<string>(getToday());
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    // Carga inicial
     setReservas(getReservaSalaFromStorage());
     setBloqueos(getHorarioBloqueadoFromStorage());
+    setIsLoaded(true);
+  }, []);
+
+  // Sincronización en tiempo real cada 2 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setReservas(getReservaSalaFromStorage());
+      setBloqueos(getHorarioBloqueadoFromStorage());
+    }, 2000);
+
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
+    if (!isLoaded) return;
     saveReservaSalaToStorage(reservas);
-  }, [reservas]);
+  }, [reservas, isLoaded]);
 
   useEffect(() => {
+    if (!isLoaded) return;
     saveHorarioBloqueadoToStorage(bloqueos);
-  }, [bloqueos]);
+  }, [bloqueos, isLoaded]);
 
   const weekDates = useMemo(() => getWeekDates(new Date(weekStart)), [weekStart]);
 
@@ -202,31 +217,21 @@ export function SalaComputacionPanel() {
           <div className={styles.manualBlocker}>
             <label className={styles.blockField}>
               <span className={styles.blockLabel}>Fecha</span>
-              <select
+              <input
+                type="date"
                 value={bloqueoForm.fecha}
                 onChange={(event) => setBloqueoForm((current) => ({ ...current, fecha: event.target.value }))}
                 className={styles.input}
-              >
-                {weekDates.map((date) => (
-                  <option key={date} value={date}>
-                    {date}
-                  </option>
-                ))}
-              </select>
+              />
             </label>
             <label className={styles.blockField}>
               <span className={styles.blockLabel}>Hora</span>
-              <select
+              <input
+                type="time"
                 value={bloqueoForm.hora}
                 onChange={(event) => setBloqueoForm((current) => ({ ...current, hora: event.target.value }))}
                 className={styles.input}
-              >
-                {timeSlots.map((slot) => (
-                  <option key={slot} value={slot}>
-                    {slot}
-                  </option>
-                ))}
-              </select>
+              />
             </label>
             <label className={styles.blockFieldWide}>
               <span className={styles.blockLabel}>Motivo</span>
@@ -265,22 +270,38 @@ export function SalaComputacionPanel() {
                   <span>{date.slice(5)}</span>
                 </div>
                 {timeSlots.map((slot) => {
-                  const reserva = dayReservas.find((item) => slot >= item.horaInicio && slot < item.horaFin);
+                  const reservaAprobada = dayReservas.find(
+                    (item) => slot >= item.horaInicio && slot < item.horaFin && item.estado === "Aprobada"
+                  );
+                  const reservaPendiente = dayReservas.find(
+                    (item) => slot >= item.horaInicio && slot < item.horaFin && item.estado === "Pendiente"
+                  );
                   const bloqueo = dayBloqueos.find((item) => item.hora === slot);
                   const isBlocked = Boolean(bloqueo);
-                  const isOccupied = Boolean(reserva);
+                  const isPending = Boolean(reservaPendiente);
+                  const isOccupied = Boolean(reservaAprobada);
+
+                  const slotClass = isBlocked
+                    ? styles.slotBlocked
+                    : isPending
+                    ? styles.slotPending
+                    : isOccupied
+                    ? styles.slotOccupied
+                    : styles.slotFree;
 
                   return (
                     <button
                       key={`${date}-${slot}`}
                       type="button"
-                      className={`${styles.slotCard} ${isBlocked ? styles.slotBlocked : isOccupied ? styles.slotOccupied : styles.slotFree}`}
+                      className={`${styles.slotCard} ${slotClass}`}
                       onClick={() => toggleBloqueo(date, slot)}
                     >
                       {isBlocked ? (
                         <span>{bloqueo?.motivo}</span>
+                      ) : isPending ? (
+                        <span>{reservaPendiente?.curso || "Pendiente"}</span>
                       ) : isOccupied ? (
-                        <span>{reserva?.curso}</span>
+                        <span>{reservaAprobada?.curso}</span>
                       ) : (
                         <span>Disponible</span>
                       )}
