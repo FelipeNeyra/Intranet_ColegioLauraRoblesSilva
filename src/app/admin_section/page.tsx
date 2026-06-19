@@ -21,7 +21,7 @@ import {
   validateEmail,
   validateRut,
 } from "../../lib/adminData";
-import { addUserAccount } from "../../lib/auth";
+import { addUserAccount, deleteUserByEmail, generateUserId } from "../../lib/auth";
 
 const sections = ["Cursos", "Docentes", "Sala de Computación"] as const;
 type Section = (typeof sections)[number];
@@ -55,6 +55,10 @@ export default function AdminSectionPage() {
     correo: "",
   });
   const [docenteErrors, setDocenteErrors] = useState<FormErrors>({});
+
+  // Modal para asignar curso a docente
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedDocenteId, setSelectedDocenteId] = useState<string>("");
 
   useEffect(() => {
     if (!isInitializing) {
@@ -92,6 +96,55 @@ export default function AdminSectionPage() {
   // Credenciales de profesor creado
   const [lastCreatedAccount, setLastCreatedAccount] = useState<{ email: string; password: string } | null>(null);
 
+  // Función para formatear RUT automáticamente
+  const formatRut = (value: string): string => {
+    // Remover caracteres no numéricos excepto guion
+    let rut = value.replace(/[^\d\-]/g, "");
+    
+    if (rut.length === 0) return "";
+    
+    // Si tiene guion, separar RUT del dígito verificador
+    if (rut.includes("-")) {
+      const [rutPart, dv] = rut.split("-");
+      rut = rutPart + dv;
+    }
+    
+    // Aplicar formato XX.XXX.XXX-X
+    if (rut.length <= 1) return rut;
+    if (rut.length <= 4) return rut.slice(0, -1) + "." + rut.slice(-1);
+    if (rut.length <= 7) return rut.slice(0, -4) + "." + rut.slice(-4, -1) + "." + rut.slice(-1);
+    
+    return rut.slice(0, -7) + "." + rut.slice(-7, -4) + "." + rut.slice(-4, -1) + "-" + rut.slice(-1);
+  };
+
+  // Función para generar correo automáticamente desde el nombre
+  const generateEmail = (nombre: string): string => {
+    if (!nombre.trim()) return "";
+    
+    // Separar nombre y apellido (primeras dos palabras)
+    const partes = nombre.trim().toLowerCase().split(/\s+/);
+    if (partes.length === 0) return "";
+    
+    const primerNombre = partes[0];
+    const apellido = partes.length > 1 ? partes[1] : "";
+    
+    // Remover caracteres especiales y acentos
+    const normalizarTexto = (texto: string) => {
+      return texto
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, "");
+    };
+    
+    const nombreNormalizado = normalizarTexto(primerNombre);
+    const apellidoNormalizado = normalizarTexto(apellido);
+    
+    if (apellidoNormalizado) {
+      return `${nombreNormalizado}.${apellidoNormalizado}@laurarobles.cl`;
+    }
+    return `${nombreNormalizado}@laurarobles.cl`;
+  };
+
   const validateDocente = (): boolean => {
     const errors: FormErrors = {};
 
@@ -120,15 +173,39 @@ export default function AdminSectionPage() {
   };
 
   const handleDeleteDocente = (id: string) => {
+    const docente = docentes.find((d) => d.id === id);
+    if (docente) {
+      // Eliminar cuenta de usuario
+      deleteUserByEmail(docente.correo);
+    }
     setDocentes((current) => current.filter((docente) => docente.id !== id));
   };
 
   const handleAssignCurso = (docenteId: string, cursoId: string) => {
+    const docente = docentes.find((d) => d.id === docenteId);
+    const oldCursoId = docente?.cursoId;
+
+    // Actualizar docente con nuevo curso
     setDocentes((current) =>
-      current.map((docente) =>
-        docente.id === docenteId ? { ...docente, cursoId } : docente
+      current.map((doc) =>
+        doc.id === docenteId ? { ...doc, cursoId } : doc
       )
     );
+
+    // Actualizar cursos: quitar profesor del curso anterior, asignar al nuevo
+    setCursos((current) =>
+      current.map((curso) => {
+        if (curso.id === cursoId) {
+          return { ...curso, profesorId: docenteId };
+        } else if (curso.id === oldCursoId) {
+          return { ...curso, profesorId: "" };
+        }
+        return curso;
+      })
+    );
+
+    setShowAssignModal(false);
+    setSelectedDocenteId("");
   };
 
   const handleAddCurso = (e: FormEvent<HTMLFormElement>) => {
@@ -156,12 +233,15 @@ export default function AdminSectionPage() {
         return;
       }
 
-      const newDocente = getNewDocente({ ...docenteForm });
+      // Generar un ID único que será usado tanto para el docente como para el usuario
+      const userId = generateUserId();
+      
+      const newDocente = getNewDocente({ ...docenteForm }, userId);
       setDocentes((current) => [...current, newDocente]);
 
-      // Crear cuenta de usuario para el docente con contraseña genérica
+      // Crear cuenta de usuario para el docente con el mismo ID
       try {
-        const result = addUserAccount({ nombre: newDocente.nombre, email: newDocente.correo, rol: "Profesor" });
+        const result = addUserAccount({ nombre: newDocente.nombre, email: newDocente.correo, rol: "Profesor" }, userId);
         if ("error" in result) {
           // No interrumpimos la creación del docente en la lista, solo informamos
           // eslint-disable-next-line no-console
@@ -318,12 +398,12 @@ export default function AdminSectionPage() {
 
                   {cursos.length > 0 && (
                     <div style={{ marginTop: "1.5rem" }}>
-                      <h4 style={{ marginBottom: "1rem", color: "#475569", fontSize: "1rem" }}>Cursos disponibles:</h4>
+                      <h4 style={{ marginBottom: "1rem", color: "var(--texto-secundario)", fontSize: "1rem" }}>Cursos disponibles:</h4>
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem" }}>
                         {cursos.map((curso) => (
-                          <div key={curso.id} style={{ padding: "1rem", background: "#f7f5f4", borderRadius: "8px", border: "1px solid #d4d4d4" }}>
-                            <p style={{ fontWeight: "600", marginBottom: "0.5rem", color: "#1f2937" }}>{curso.nombre}</p>
-                            <p style={{ fontSize: "0.85rem", color: "#666" }}>
+                          <div key={curso.id} style={{ padding: "1rem", background: "var(--fondo-claro)", borderRadius: "8px", border: "1px solid var(--borde-claro)" }}>
+                            <p style={{ fontWeight: "600", marginBottom: "0.5rem", color: "var(--texto-principal)" }}>{curso.nombre}</p>
+                            <p style={{ fontSize: "0.85rem", color: "var(--texto-secundario)" }}>
                               Profesor: {docentes.find((d) => d.id === curso.profesorId)?.nombre || "No asignado"}
                             </p>
                           </div>
@@ -352,8 +432,17 @@ export default function AdminSectionPage() {
                         id="docNombre"
                         value={docenteForm.nombre}
                         onChange={(event) => {
-                          setDocenteForm((current) => ({ ...current, nombre: event.target.value }));
-                          setDocenteErrors((current) => ({ ...current, nombre: "" }));
+                          const nombre = event.target.value;
+                          // Solo permitir letras, números y espacios
+                          if (/^[a-záéíóúñA-ZÁÉÍÓÚÑ\s]*$/.test(nombre) || nombre === "") {
+                            const correoAutomatico = generateEmail(nombre);
+                            setDocenteForm((current) => ({ 
+                              ...current, 
+                              nombre: nombre,
+                              correo: correoAutomatico
+                            }));
+                            setDocenteErrors((current) => ({ ...current, nombre: "", correo: "" }));
+                          }
                         }}
                         className={styles.input}
                         placeholder="Carlos Ramírez"
@@ -367,11 +456,13 @@ export default function AdminSectionPage() {
                         id="docRut"
                         value={docenteForm.rut}
                         onChange={(event) => {
-                          setDocenteForm((current) => ({ ...current, rut: event.target.value }));
+                          const rutFormateado = formatRut(event.target.value);
+                          setDocenteForm((current) => ({ ...current, rut: rutFormateado }));
                           setDocenteErrors((current) => ({ ...current, rut: "" }));
                         }}
                         className={styles.input}
                         placeholder="12.345.678-9"
+                        maxLength={12}
                       />
                       {docenteErrors.rut ? <span className={styles.error}>{docenteErrors.rut}</span> : null}
                     </div>
@@ -392,7 +483,7 @@ export default function AdminSectionPage() {
                     </div>
 
                     <div className={styles.inputRow}>
-                      <label htmlFor="docCorreo">Correo *</label>
+                      <label htmlFor="docCorreo">Correo (Generado automáticamente) *</label>
                       <input
                         id="docCorreo"
                         value={docenteForm.correo}
@@ -402,6 +493,8 @@ export default function AdminSectionPage() {
                         }}
                         className={styles.input}
                         placeholder="carlos.ramirez@laurarobles.cl"
+                        readOnly
+                        style={{ backgroundColor: "var(--fondo-claro)", cursor: "not-allowed" }}
                       />
                       {docenteErrors.correo ? <span className={styles.error}>{docenteErrors.correo}</span> : null}
                     </div>
@@ -423,29 +516,21 @@ export default function AdminSectionPage() {
                         <p>Fecha de nacimiento: {new Date(docente.fechaNacimiento).toLocaleDateString("es-CL")}</p>
                         <p>Correo: {docente.correo}</p>
                         {docente.cursoId && (
-                          <p style={{ fontWeight: "600", color: "#db353d" }}>
+                          <p style={{ fontWeight: "600", color: "var(--color-rojo)" }}>
                             Curso: {cursos.find((c) => c.id === docente.cursoId)?.nombre || "No encontrado"}
                           </p>
                         )}
                       </div>
                       <div style={{ display: "flex", gap: "0.75rem", flexDirection: "column" }}>
-                        <div>
-                          <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.9rem", fontWeight: "600", color: "#475569" }}>
-                            Asignar Curso:
-                          </label>
-                          <select
-                            value={docente.cursoId || ""}
-                            onChange={(e) => handleAssignCurso(docente.id, e.target.value)}
-                            className={styles.input}
-                          >
-                            <option value="">-- Seleccionar --</option>
-                            {cursos.map((curso) => (
-                              <option key={curso.id} value={curso.id}>
-                                {curso.nombre}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+                        <button
+                          onClick={() => {
+                            setSelectedDocenteId(docente.id);
+                            setShowAssignModal(true);
+                          }}
+                          className={styles.actionButton}
+                        >
+                          Asignar Curso
+                        </button>
                         <button className={styles.deleteButton} onClick={() => handleDeleteDocente(docente.id)}>
                           Eliminar
                         </button>
@@ -453,6 +538,74 @@ export default function AdminSectionPage() {
                     </article>
                   ))}
               </div>
+
+              {showAssignModal && selectedDocenteId && (
+                <div style={{
+                  position: "fixed",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: "rgba(0, 0, 0, 0.5)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 1000,
+                }}>
+                  <div style={{
+                    background: "white",
+                    borderRadius: "24px",
+                    padding: "2rem",
+                    maxWidth: "400px",
+                    width: "90%",
+                    boxShadow: "0 24px 60px rgba(15, 23, 42, 0.15)",
+                  }}>
+                    <h3 style={{ marginBottom: "1rem", color: "var(--color-rojo)", fontFamily: "'League Spartan', sans-serif" }}>
+                      Asignar Curso
+                    </h3>
+                    <p style={{ marginBottom: "1.5rem", color: "var(--texto-secundario)", fontSize: "0.95rem" }}>
+                      Selecciona el curso para {docentes.find((d) => d.id === selectedDocenteId)?.nombre}:
+                    </p>
+                    <div style={{ display: "grid", gap: "0.75rem" }}>
+                      {cursos.map((curso) => (
+                        <button
+                          key={curso.id}
+                          onClick={() => handleAssignCurso(selectedDocenteId, curso.id)}
+                          style={{
+                            padding: "0.75rem 1rem",
+                            background: "var(--fondo-claro)",
+                            border: "2px solid var(--borde-claro)",
+                            borderRadius: "12px",
+                            cursor: "pointer",
+                            fontWeight: "600",
+                            color: "var(--texto-principal)",
+                            transition: "all 0.2s ease",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = "var(--color-rojo)";
+                            e.currentTarget.style.color = "white";
+                            e.currentTarget.style.borderColor = "var(--color-rojo)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "var(--fondo-claro)";
+                            e.currentTarget.style.color = "var(--texto-principal)";
+                            e.currentTarget.style.borderColor = "var(--borde-claro)";
+                          }}
+                        >
+                          {curso.nombre}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => setShowAssignModal(false)}
+                        className={styles.secondaryButton}
+                        style={{ marginTop: "0.75rem" }}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>

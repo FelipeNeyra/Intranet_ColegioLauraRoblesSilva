@@ -178,21 +178,30 @@ export const seedInitialAdminData = (): void => {
 
   if (!hasEstudiantes) {
     saveEstudiantesToStorage([
-      // Curso 5°A
+      // Curso 5°A (7 estudiantes)
       { id: "est-1", nombre: "Ana María González", grado: "5°", rut: "12.345.678-9", fechaNacimiento: "2010-05-15", correo: "ana.gonzalez@laurarobles.cl", cursoId: "curso-1" },
       { id: "est-2", nombre: "Carlos Rodríguez", grado: "5°", rut: "13.456.789-0", fechaNacimiento: "2010-08-22", correo: "carlos.rodriguez@laurarobles.cl", cursoId: "curso-1" },
       { id: "est-3", nombre: "María López", grado: "5°", rut: "14.567.890-1", fechaNacimiento: "2010-11-10", correo: "maria.lopez@laurarobles.cl", cursoId: "curso-1" },
       { id: "est-4", nombre: "Diego Muñoz", grado: "5°", rut: "15.678.901-2", fechaNacimiento: "2010-03-20", correo: "diego.munoz@laurarobles.cl", cursoId: "curso-1" },
-      // Curso 6°B
+      { id: "est-13", nombre: "Valentina Soto", grado: "5°", rut: "24.567.890-1", fechaNacimiento: "2010-09-30", correo: "valentina.soto@laurarobles.cl", cursoId: "curso-1" },
+      { id: "est-14", nombre: "Andrés Vega", grado: "5°", rut: "25.678.901-2", fechaNacimiento: "2010-12-12", correo: "andres.vega@laurarobles.cl", cursoId: "curso-1" },
+      { id: "est-15", nombre: "Francisca Guzmán", grado: "5°", rut: "26.789.012-3", fechaNacimiento: "2010-04-18", correo: "francisca.guzman@laurarobles.cl", cursoId: "curso-1" },
+      // Curso 6°B (7 estudiantes)
       { id: "est-5", nombre: "Sofía García", grado: "6°", rut: "16.789.012-3", fechaNacimiento: "2009-07-14", correo: "sofia.garcia@laurarobles.cl", cursoId: "curso-2" },
       { id: "est-6", nombre: "Pablo Soto", grado: "6°", rut: "17.890.123-4", fechaNacimiento: "2009-01-25", correo: "pablo.soto@laurarobles.cl", cursoId: "curso-2" },
       { id: "est-7", nombre: "Catalina Flores", grado: "6°", rut: "18.901.234-5", fechaNacimiento: "2009-09-08", correo: "catalina.flores@laurarobles.cl", cursoId: "curso-2" },
       { id: "est-8", nombre: "Javier Torres", grado: "6°", rut: "19.012.345-6", fechaNacimiento: "2009-12-16", correo: "javier.torres@laurarobles.cl", cursoId: "curso-2" },
-      // Curso 7°A
+      { id: "est-16", nombre: "Marcela Reyes", grado: "6°", rut: "27.890.123-4", fechaNacimiento: "2009-06-22", correo: "marcela.reyes@laurarobles.cl", cursoId: "curso-2" },
+      { id: "est-17", nombre: "Ignacio Molina", grado: "6°", rut: "28.901.234-5", fechaNacimiento: "2009-11-05", correo: "ignacio.molina@laurarobles.cl", cursoId: "curso-2" },
+      { id: "est-18", nombre: "Constanza Ríos", grado: "6°", rut: "29.012.345-6", fechaNacimiento: "2009-08-17", correo: "constanza.rios@laurarobles.cl", cursoId: "curso-2" },
+      // Curso 7°A (7 estudiantes)
       { id: "est-9", nombre: "Javiera Morales", grado: "7°", rut: "20.123.456-7", fechaNacimiento: "2008-04-11", correo: "javiera.morales@laurarobles.cl", cursoId: "curso-3" },
       { id: "est-10", nombre: "Roberto Díaz", grado: "7°", rut: "21.234.567-8", fechaNacimiento: "2008-06-28", correo: "roberto.diaz@laurarobles.cl", cursoId: "curso-3" },
       { id: "est-11", nombre: "Claudia Herrera", grado: "7°", rut: "22.345.678-9", fechaNacimiento: "2008-10-05", correo: "claudia.herrera@laurarobles.cl", cursoId: "curso-3" },
       { id: "est-12", nombre: "Felipe Ramírez", grado: "7°", rut: "23.456.789-0", fechaNacimiento: "2008-02-19", correo: "felipe.ramirez@laurarobles.cl", cursoId: "curso-3" },
+      { id: "est-19", nombre: "Lorena Castillo", grado: "7°", rut: "30.123.456-7", fechaNacimiento: "2008-03-14", correo: "lorena.castillo@laurarobles.cl", cursoId: "curso-3" },
+      { id: "est-20", nombre: "Rodrigo Fernández", grado: "7°", rut: "31.234.567-8", fechaNacimiento: "2008-07-26", correo: "rodrigo.fernandez@laurarobles.cl", cursoId: "curso-3" },
+      { id: "est-21", nombre: "Viviana Ortega", grado: "7°", rut: "32.345.678-9", fechaNacimiento: "2008-09-09", correo: "viviana.ortega@laurarobles.cl", cursoId: "curso-3" },
     ]);
   }
 
@@ -254,7 +263,7 @@ const generateId = (): string =>
 
 export const getNewCurso = (partial: Omit<Curso, "id">): Curso => ({ id: generateId(), ...partial });
 export const getNewEstudiante = (partial: Omit<Estudiante, "id">): Estudiante => ({ id: generateId(), ...partial });
-export const getNewDocente = (partial: Omit<Docente, "id">): Docente => ({ id: generateId(), ...partial });
+export const getNewDocente = (partial: Omit<Docente, "id">, customId?: string): Docente => ({ id: customId || generateId(), ...partial });
 export const getNewReservaSala = (partial: Omit<ReservaSala, "id">): ReservaSala => ({ id: generateId(), ...partial });
 export const getNewHorarioBloqueado = (partial: Omit<HorarioBloqueado, "id">): HorarioBloqueado => ({ id: generateId(), ...partial });
 export const getNewNota = (partial: Omit<Nota, "id">): Nota => ({ id: generateId(), ...partial });

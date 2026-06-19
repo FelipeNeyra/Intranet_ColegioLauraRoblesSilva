@@ -215,9 +215,11 @@ export function ProfesorCursosPanel({ profesorId }: { profesorId: string }) {
                                     <input
                                       type="text"
                                       value={calificacionForm.asignatura}
-                                      onChange={(e) =>
-                                        setCalificacionForm({ ...calificacionForm, asignatura: e.target.value })
-                                      }
+                                      onChange={(e) => {
+                                        if (/^[a-záéíóúñA-ZÁÉÍÓÚÑ\s]*$/.test(e.target.value) || e.target.value === "") {
+                                          setCalificacionForm({ ...calificacionForm, asignatura: e.target.value });
+                                        }
+                                      }}
                                       placeholder="Ej: Matemática"
                                       className={styles.input}
                                     />

@@ -34,7 +34,7 @@
 
 .primaryButton {
   padding: 10px 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #db353d;
   color: white;
   border: none;
   border-radius: 6px;
@@ -45,7 +45,7 @@
 
 .primaryButton:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(219, 53, 61, 0.4);
 }
 
 .secondaryButton {
@@ -65,7 +65,7 @@
 
 .dangerButton {
   padding: 8px 12px;
-  background: #ff6b6b;
+  background: #db353d;
   color: white;
   border: none;
   border-radius: 4px;
@@ -75,7 +75,7 @@
 }
 
 .dangerButton:hover {
-  background: #ff5252;
+  background: #c72a2f;
 }
 
 .formCard {
@@ -160,7 +160,7 @@
 .cursoHeader {
   width: 100%;
   padding: 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #db353d;
   color: white;
   border: none;
   cursor: pointer;

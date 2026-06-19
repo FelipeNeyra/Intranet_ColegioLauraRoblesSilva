@@ -17,6 +17,7 @@ import {
   validateEmail,
   validateRut,
   gradoOptions,
+  seedInitialAdminData,
 } from "../../lib/adminData";
 
 interface FormErrors {
@@ -59,12 +60,44 @@ export function CursosPanel() {
     descripcion: "",
   });
 
+  // Función para formatear RUT automáticamente
+  const formatRut = (value: string): string => {
+    let rut = value.replace(/[^\d\-]/g, "");
+    
+    if (rut.length === 0) return "";
+    
+    if (rut.includes("-")) {
+      const [rutPart, dv] = rut.split("-");
+      rut = rutPart + dv;
+    }
+    
+    if (rut.length <= 1) return rut;
+    if (rut.length <= 4) return rut.slice(0, -1) + "." + rut.slice(-1);
+    if (rut.length <= 7) return rut.slice(0, -4) + "." + rut.slice(-4, -1) + "." + rut.slice(-1);
+    
+    return rut.slice(0, -7) + "." + rut.slice(-7, -4) + "." + rut.slice(-4, -1) + "-" + rut.slice(-1);
+  };
+
   useEffect(() => {
-    setCursos(getCursosFromStorage());
-    setEstudiantes(getEstudiantesFromStorage());
-    setCalificaciones(getCalificacionesFromStorage());
+    seedInitialAdminData();
+    const cursosData = getCursosFromStorage();
+    const estudiantesData = getEstudiantesFromStorage();
+    const calificacionesData = getCalificacionesFromStorage();
+    
+    setCursos(cursosData);
+    setEstudiantes(estudiantesData);
+    setCalificaciones(calificacionesData);
     setIsLoaded(true);
   }, []);
+
+  // Expandir todos los cursos cuando cambien
+  useEffect(() => {
+    if (cursos.length > 0) {
+      // Comentado: ya no expandir automáticamente
+      // const expandedSet = new Set(cursos.map((c) => c.id));
+      // setExpandedCursos(expandedSet);
+    }
+  }, [cursos.length]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -210,20 +243,31 @@ export function CursosPanel() {
               <input
                 type="text"
                 value={estudianteForm.nombre}
-                onChange={(e) => setEstudianteForm({ ...estudianteForm, nombre: e.target.value })}
+                onChange={(e) => {
+                  if (/^[a-záéíóúñA-ZÁÉÍÓÚÑ\s]*$/.test(e.target.value) || e.target.value === "") {
+                    setEstudianteForm({ ...estudianteForm, nombre: e.target.value });
+                    setEstudianteErrors((current) => ({ ...current, nombre: "" }));
+                  }
+                }}
                 className={styles.input}
+                placeholder="Ej: Juan Pérez"
               />
               {estudianteErrors.nombre && <span className={styles.error}>{estudianteErrors.nombre}</span>}
             </div>
 
             <div className={styles.formGroup}>
-              <label>RUT *</label>
+              <label>RUT * (Formato: 12.345.678-9)</label>
               <input
                 type="text"
                 placeholder="12.345.678-9"
                 value={estudianteForm.rut}
-                onChange={(e) => setEstudianteForm({ ...estudianteForm, rut: e.target.value })}
+                onChange={(e) => {
+                  const rutFormateado = formatRut(e.target.value);
+                  setEstudianteForm({ ...estudianteForm, rut: rutFormateado });
+                  setEstudianteErrors((current) => ({ ...current, rut: "" }));
+                }}
                 className={styles.input}
+                maxLength={12}
               />
               {estudianteErrors.rut && <span className={styles.error}>{estudianteErrors.rut}</span>}
             </div>
@@ -233,7 +277,10 @@ export function CursosPanel() {
               <input
                 type="date"
                 value={estudianteForm.fechaNacimiento}
-                onChange={(e) => setEstudianteForm({ ...estudianteForm, fechaNacimiento: e.target.value })}
+                onChange={(e) => {
+                  setEstudianteForm({ ...estudianteForm, fechaNacimiento: e.target.value });
+                  setEstudianteErrors((current) => ({ ...current, fechaNacimiento: "" }));
+                }}
                 className={styles.input}
               />
               {estudianteErrors.fechaNacimiento && <span className={styles.error}>{estudianteErrors.fechaNacimiento}</span>}
@@ -244,8 +291,15 @@ export function CursosPanel() {
               <input
                 type="email"
                 value={estudianteForm.correo}
-                onChange={(e) => setEstudianteForm({ ...estudianteForm, correo: e.target.value })}
+                onChange={(e) => {
+                  const correo = e.target.value;
+                  if (/^[a-zA-Z0-9.@_-]*$/.test(correo) || correo === "") {
+                    setEstudianteForm({ ...estudianteForm, correo: correo });
+                    setEstudianteErrors((current) => ({ ...current, correo: "" }));
+                  }
+                }}
                 className={styles.input}
+                placeholder="Ej: juan.perez@laurarobles.cl"
               />
               {estudianteErrors.correo && <span className={styles.error}>{estudianteErrors.correo}</span>}
             </div>

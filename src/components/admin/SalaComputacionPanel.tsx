@@ -212,31 +212,21 @@ export function SalaComputacionPanel() {
           <div className={styles.manualBlocker}>
             <label className={styles.blockField}>
               <span className={styles.blockLabel}>Fecha</span>
-              <select
+              <input
+                type="date"
                 value={bloqueoForm.fecha}
                 onChange={(event) => setBloqueoForm((current) => ({ ...current, fecha: event.target.value }))}
                 className={styles.input}
-              >
-                {weekDates.map((date) => (
-                  <option key={date} value={date}>
-                    {date}
-                  </option>
-                ))}
-              </select>
+              />
             </label>
             <label className={styles.blockField}>
               <span className={styles.blockLabel}>Hora</span>
-              <select
+              <input
+                type="time"
                 value={bloqueoForm.hora}
                 onChange={(event) => setBloqueoForm((current) => ({ ...current, hora: event.target.value }))}
                 className={styles.input}
-              >
-                {timeSlots.map((slot) => (
-                  <option key={slot} value={slot}>
-                    {slot}
-                  </option>
-                ))}
-              </select>
+              />
             </label>
             <label className={styles.blockFieldWide}>
               <span className={styles.blockLabel}>Motivo</span>
