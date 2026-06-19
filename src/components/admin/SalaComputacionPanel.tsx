@@ -76,12 +76,8 @@ export function SalaComputacionPanel() {
   useEffect(() => {
     if (!isLoaded) return;
     saveReservaSalaToStorage(reservas);
-  }, [reservas, isLoaded]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
     saveHorarioBloqueadoToStorage(bloqueos);
-  }, [bloqueos, isLoaded]);
+  }, [reservas, bloqueos, isLoaded]);
 
   const weekDates = useMemo(() => getWeekDates(new Date(weekStart)), [weekStart]);
 
@@ -97,20 +93,13 @@ export function SalaComputacionPanel() {
 
   const reservasFiltradas = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) {
-      return reservas;
-    }
-
-    return reservas.filter((reserva) => {
-      const hayCoincidencia =
-        reserva.nombre.toLowerCase().includes(query) ||
-        reserva.apellido.toLowerCase().includes(query) ||
-        reserva.curso.toLowerCase().includes(query) ||
-        (reserva.asignatura || "").toLowerCase().includes(query) ||
-        reserva.correo.toLowerCase().includes(query);
-
-      return hayCoincidencia;
-    });
+    return query
+      ? reservas.filter((reserva) =>
+          [reserva.nombre, reserva.apellido, reserva.curso, reserva.correo, reserva.asignatura || ""].some((valor) =>
+            valor.toLowerCase().includes(query)
+          )
+        )
+      : reservas;
   }, [reservas, search]);
 
   const getReservasAprobadasByDate = (date: string) =>

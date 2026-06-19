@@ -324,6 +324,22 @@ export const getNewNota = (partial: Omit<Nota, "id">): Nota => ({ id: generateId
 export const getNewCita = (partial: Omit<Cita, "id">): Cita => ({ id: generateId(), ...partial });
 export const getNewCalificacion = (partial: Omit<Calificacion, "id">): Calificacion => ({ id: generateId(), ...partial });
 
+export const formatRut = (value: string): string => {
+  let rut = value.replace(/[^\d\-]/g, "");
+  if (rut.length === 0) return "";
+
+  if (rut.includes("-")) {
+    const [rutPart, dv] = rut.split("-");
+    rut = rutPart + dv;
+  }
+
+  if (rut.length <= 1) return rut;
+  if (rut.length <= 4) return rut.slice(0, -1) + "." + rut.slice(-1);
+  if (rut.length <= 7) return rut.slice(0, -4) + "." + rut.slice(-4, -1) + "." + rut.slice(-1);
+
+  return rut.slice(0, -7) + "." + rut.slice(-7, -4) + "." + rut.slice(-4, -1) + "-" + rut.slice(-1);
+};
+
 export const validateEmail = (email: string): boolean => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };

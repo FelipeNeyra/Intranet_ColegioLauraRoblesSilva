@@ -16,6 +16,7 @@ import {
   getNewCalificacion,
   validateEmail,
   validateRut,
+  formatRut,
   gradoOptions,
   seedInitialAdminData,
 } from "../../lib/adminData";
@@ -85,24 +86,6 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
     }
   };
 
-  // Función para formatear RUT automáticamente
-  const formatRut = (value: string): string => {
-    let rut = value.replace(/[^\d\-]/g, "");
-    
-    if (rut.length === 0) return "";
-    
-    if (rut.includes("-")) {
-      const [rutPart, dv] = rut.split("-");
-      rut = rutPart + dv;
-    }
-    
-    if (rut.length <= 1) return rut;
-    if (rut.length <= 4) return rut.slice(0, -1) + "." + rut.slice(-1);
-    if (rut.length <= 7) return rut.slice(0, -4) + "." + rut.slice(-4, -1) + "." + rut.slice(-1);
-    
-    return rut.slice(0, -7) + "." + rut.slice(-7, -4) + "." + rut.slice(-4, -1) + "-" + rut.slice(-1);
-  };
-
   useEffect(() => {
     seedInitialAdminData();
     const cursosData = getCursosFromStorage();
@@ -129,17 +112,9 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
   useEffect(() => {
     if (!isLoaded) return;
     saveCursosToStorage(cursos);
-  }, [cursos, isLoaded]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
     saveEstudiantesToStorage(estudiantes);
-  }, [estudiantes, isLoaded]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
     saveCalificacionesStorage(calificaciones);
-  }, [calificaciones, isLoaded]);
+  }, [cursos, estudiantes, calificaciones, isLoaded]);
 
   const validateEstudiante = (): boolean => {
     const errors: FormErrors = {};

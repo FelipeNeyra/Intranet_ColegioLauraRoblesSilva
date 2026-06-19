@@ -9,11 +9,9 @@ import styles from "./page.module.css";
 import {
   Curso,
   Docente,
-  Estudiante,
   cursoNiveles,
   getCursosFromStorage,
   getDocentesFromStorage,
-  getEstudiantesFromStorage,
   getNewDocente,
   getNewCurso,
   saveCursosToStorage,
@@ -21,9 +19,11 @@ import {
   seedInitialAdminData,
   validateEmail,
   validateRut,
+  formatRut,
 } from "../../lib/adminData";
 import { addUserAccount, deleteUserByEmail, generateUserId } from "../../lib/auth";
 
+//Lista de Botones disponibles
 const sections = ["Cursos", "Docentes", "Sala de Computación"] as const;
 type Section = (typeof sections)[number];
 
@@ -90,36 +90,13 @@ export default function AdminSectionPage() {
   useEffect(() => {
     if (!isLoaded) return;
     saveCursosToStorage(cursos);
-  }, [cursos, isLoaded]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
     saveDocentesToStorage(docentes);
-  }, [docentes, isLoaded]);
+  }, [cursos, docentes, isLoaded]);
 
   // Credenciales de profesor creado
   const [lastCreatedAccount, setLastCreatedAccount] = useState<{ email: string; password: string } | null>(null);
 
   // Función para formatear RUT automáticamente
-  const formatRut = (value: string): string => {
-    // Remover caracteres no numéricos excepto guion
-    let rut = value.replace(/[^\d\-]/g, "");
-    
-    if (rut.length === 0) return "";
-    
-    // Si tiene guion, separar RUT del dígito verificador
-    if (rut.includes("-")) {
-      const [rutPart, dv] = rut.split("-");
-      rut = rutPart + dv;
-    }
-    
-    // Aplicar formato XX.XXX.XXX-X
-    if (rut.length <= 1) return rut;
-    if (rut.length <= 4) return rut.slice(0, -1) + "." + rut.slice(-1);
-    if (rut.length <= 7) return rut.slice(0, -4) + "." + rut.slice(-4, -1) + "." + rut.slice(-1);
-    
-    return rut.slice(0, -7) + "." + rut.slice(-7, -4) + "." + rut.slice(-4, -1) + "-" + rut.slice(-1);
-  };
 
   // Función para generar correo automáticamente desde el nombre
   const generateEmail = (nombre: string): string => {
@@ -311,6 +288,7 @@ export default function AdminSectionPage() {
 
   return (
     <div className={styles.page}>
+      {/*Titulo de la página*/}
       <header className={styles.header}>
         <div className={styles.brand}>
           <span className={styles.logo}>LR</span>
@@ -320,6 +298,7 @@ export default function AdminSectionPage() {
           </div>
         </div>
 
+        {/*Panel de Navgeación con botones*/}
         <nav className={styles.nav} aria-label="Navegación de administrador">
           {sections.map((section) => (
             <button
