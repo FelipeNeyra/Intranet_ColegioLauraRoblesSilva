@@ -106,6 +106,7 @@ export function SalaComputacionPanel() {
         reserva.nombre.toLowerCase().includes(query) ||
         reserva.apellido.toLowerCase().includes(query) ||
         reserva.curso.toLowerCase().includes(query) ||
+        (reserva.asignatura || "").toLowerCase().includes(query) ||
         reserva.correo.toLowerCase().includes(query);
 
       return hayCoincidencia;
@@ -199,7 +200,7 @@ export function SalaComputacionPanel() {
       <div className={styles.toolbar}>
         <input
           type="search"
-          placeholder="Buscar por docente, curso o correo"
+          placeholder="Buscar por docente, curso, asignatura o correo"
           className={styles.input}
           value={search}
           onChange={(event) => setSearch(event.target.value)}
@@ -357,6 +358,9 @@ export function SalaComputacionPanel() {
                 </div>
                 <p>
                   <strong>Curso:</strong> {reserva.curso}
+                </p>
+                <p>
+                  <strong>Asignatura:</strong> {reserva.asignatura || "Sin asignatura"}
                 </p>
                 <p>
                   <strong>Fecha:</strong> {reserva.fecha} · {reserva.horaInicio} a {reserva.horaFin}

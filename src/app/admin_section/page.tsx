@@ -10,6 +10,7 @@ import {
   Curso,
   Docente,
   Estudiante,
+  cursoNiveles,
   getCursosFromStorage,
   getDocentesFromStorage,
   getEstudiantesFromStorage,
@@ -31,6 +32,7 @@ interface FormErrors {
   rut?: string;
   fechaNacimiento?: string;
   correo?: string;
+  asignaturas?: string;
 }
 
 export default function AdminSectionPage() {
@@ -44,7 +46,8 @@ export default function AdminSectionPage() {
   // Form for creating new courses
   const [showAddCurso, setShowAddCurso] = useState(false);
   const [cursoForm, setCursoForm] = useState({
-    nombre: "",
+    nivel: "",
+    letra: "",
   });
 
   // Form for docentes
@@ -53,6 +56,7 @@ export default function AdminSectionPage() {
     rut: "",
     fechaNacimiento: "",
     correo: "",
+    asignaturas: "",
   });
   const [docenteErrors, setDocenteErrors] = useState<FormErrors>({});
 
@@ -168,6 +172,10 @@ export default function AdminSectionPage() {
       errors.correo = "El correo debe incluir el símbolo @.";
     }
 
+    if (!docenteForm.asignaturas.trim()) {
+      errors.asignaturas = "Debe indicar al menos una asignatura.";
+    }
+
     setDocenteErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -211,18 +219,28 @@ export default function AdminSectionPage() {
   const handleAddCurso = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!cursoForm.nombre.trim()) {
+    if (!cursoForm.nivel || !cursoForm.letra) {
       return;
     }
 
+    const nombreCurso = `${cursoForm.nivel} ${cursoForm.letra}`;
     const newCurso = getNewCurso({
-      nombre: cursoForm.nombre,
+      nombre: nombreCurso,
       profesorId: "",
     });
 
     setCursos((current) => [...current, newCurso]);
-    setCursoForm({ nombre: "" });
+    setCursoForm({ nivel: "", letra: "" });
     setShowAddCurso(false);
+  };
+
+  const handleDeleteCurso = (id: string) => {
+    setCursos((current) => current.filter((curso) => curso.id !== id));
+    setDocentes((current) =>
+      current.map((docente) =>
+        docente.cursoId === id ? { ...docente, cursoId: undefined } : docente
+      )
+    );
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -236,7 +254,18 @@ export default function AdminSectionPage() {
       // Generar un ID único que será usado tanto para el docente como para el usuario
       const userId = generateUserId();
       
-      const newDocente = getNewDocente({ ...docenteForm }, userId);
+      const asignaturas = docenteForm.asignaturas
+        .split(",")
+        .map((asignatura) => asignatura.trim())
+        .filter(Boolean);
+
+      const newDocente = getNewDocente(
+        {
+          ...docenteForm,
+          asignaturas,
+        },
+        userId
+      );
       setDocentes((current) => [...current, newDocente]);
 
       // Crear cuenta de usuario para el docente con el mismo ID
@@ -260,6 +289,7 @@ export default function AdminSectionPage() {
         rut: "",
         fechaNacimiento: "",
         correo: "",
+        asignaturas: "",
       });
       setDocenteErrors({});
     }
@@ -352,7 +382,7 @@ export default function AdminSectionPage() {
         <div className={styles.listCard}>
           {activeSection === "Cursos" ? (
             <>
-              <CursosPanel />
+              <CursosPanel cursos={cursos} onCursosChange={setCursos} />
               
               <div style={{ maxWidth: "1100px", margin: "2rem auto 0" }}>
                 <div style={{ padding: "2rem", background: "white", borderRadius: "24px", boxShadow: "0 24px 60px rgba(15, 23, 42, 0.08)" }}>
@@ -368,15 +398,36 @@ export default function AdminSectionPage() {
                   ) : (
                     <form onSubmit={handleAddCurso} className={styles.addForm}>
                       <div className={styles.inputRow}>
-                        <label htmlFor="cursoNombre">Nombre del Curso *</label>
-                        <input
-                          id="cursoNombre"
-                          type="text"
-                          value={cursoForm.nombre}
-                          onChange={(e) => setCursoForm({ nombre: e.target.value })}
-                          placeholder="Ej: 8°C"
+                        <label htmlFor="cursoNivel">Nivel *</label>
+                        <select
+                          id="cursoNivel"
+                          value={cursoForm.nivel}
+                          onChange={(e) => setCursoForm({ ...cursoForm, nivel: e.target.value })}
                           className={styles.input}
-                        />
+                        >
+                          <option value="">Selecciona un nivel</option>
+                          {cursoNiveles.map((nivel) => (
+                            <option key={nivel} value={nivel}>
+                              {nivel}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className={styles.inputRow}>
+                        <label htmlFor="cursoLetra">Letra *</label>
+                        <select
+                          id="cursoLetra"
+                          value={cursoForm.letra}
+                          onChange={(e) => setCursoForm({ ...cursoForm, letra: e.target.value })}
+                          className={styles.input}
+                        >
+                          <option value="">Selecciona una letra</option>
+                          {Array.from({ length: 4 }, (_, index) => String.fromCharCode(65 + index)).map((letra) => (
+                            <option key={letra} value={letra}>
+                              {letra}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                       <div style={{ display: "flex", gap: "0.75rem" }}>
                         <button
@@ -406,6 +457,14 @@ export default function AdminSectionPage() {
                             <p style={{ fontSize: "0.85rem", color: "var(--texto-secundario)" }}>
                               Profesor: {docentes.find((d) => d.id === curso.profesorId)?.nombre || "No asignado"}
                             </p>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCurso(curso.id)}
+                              className={styles.deleteButton}
+                              style={{ marginTop: "0.75rem" }}
+                            >
+                              Eliminar curso
+                            </button>
                           </div>
                         ))}
                       </div>
@@ -498,6 +557,21 @@ export default function AdminSectionPage() {
                       />
                       {docenteErrors.correo ? <span className={styles.error}>{docenteErrors.correo}</span> : null}
                     </div>
+
+                    <div className={styles.inputRow}>
+                      <label htmlFor="docAsignaturas">Asignaturas del docente *</label>
+                      <input
+                        id="docAsignaturas"
+                        value={docenteForm.asignaturas}
+                        onChange={(event) => {
+                          setDocenteForm((current) => ({ ...current, asignaturas: event.target.value }));
+                          setDocenteErrors((current) => ({ ...current, asignaturas: "" }));
+                        }}
+                        className={styles.input}
+                        placeholder="Ej: Matemáticas, Lenguaje y Comunicación"
+                      />
+                      {docenteErrors.asignaturas ? <span className={styles.error}>{docenteErrors.asignaturas}</span> : null}
+                    </div>
                   </>
                 )}
 
@@ -515,6 +589,9 @@ export default function AdminSectionPage() {
                         <p>RUT: {docente.rut}</p>
                         <p>Fecha de nacimiento: {new Date(docente.fechaNacimiento).toLocaleDateString("es-CL")}</p>
                         <p>Correo: {docente.correo}</p>
+                        <p>
+                          <strong>Asignaturas:</strong> {(docente.asignaturas ?? []).join(", ") || "Sin asignaturas"}
+                        </p>
                         {docente.cursoId && (
                           <p style={{ fontWeight: "600", color: "var(--color-rojo)" }}>
                             Curso: {cursos.find((c) => c.id === docente.cursoId)?.nombre || "No encontrado"}

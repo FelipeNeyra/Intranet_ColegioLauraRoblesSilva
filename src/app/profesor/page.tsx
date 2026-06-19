@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import { AuthContext } from "../../context/AuthContext";
@@ -63,8 +63,20 @@ export default function ProfesorPage() {
   }
 
   if (!user || user.rol !== "Profesor") {
-    return null;
+    return (
+      <main style={{ padding: 24 }}>
+        <p>Accediendo al panel del docente...</p>
+      </main>
+    );
   }
+
+  const reservasUsuario = useMemo(
+    () => reservas.filter((r) => r.correo === user.email),
+    [reservas, user.email]
+  );
+  const aprobadas = reservasUsuario.filter((r) => r.estado === "Aprobada").length;
+  const rechazadas = reservasUsuario.filter((r) => r.estado === "Rechazada").length;
+  const solicitudesConRespuesta = aprobadas + rechazadas;
 
   return (
     <div className={styles.page}>
@@ -109,6 +121,7 @@ export default function ProfesorPage() {
             <ProfesorReservaPanel
               userName={user?.nombre || "Profesor"}
               userEmail={user?.email || ""}
+              profesorId={user?.id || ""}
               reservas={reservas}
               bloqueos={bloqueos}
               onReservaCreada={(reserva) => {
@@ -119,19 +132,36 @@ export default function ProfesorPage() {
 
             <div style={{ marginTop: "2rem" }}>
               <h3 style={{ color: "var(--color-rojo)", marginBottom: "1rem" }}>Mis solicitudes</h3>
-              {reservas.filter((r) => r.correo === user?.email && r.estado !== "Rechazada").length === 0 ? (
+              {solicitudesConRespuesta > 0 && (
+                <div
+                  style={{
+                    marginBottom: "1rem",
+                    padding: "0.9rem 1rem",
+                    borderRadius: "10px",
+                    background: aprobadas > 0 ? "#ecfdf3" : "#fff7ed",
+                    color: aprobadas > 0 ? "#166534" : "#9a5b00",
+                    fontWeight: 600,
+                  }}
+                  role="status"
+                >
+                  {aprobadas > 0 && <div>✅ {aprobadas} solicitud(es) aprobada(s).</div>}
+                  {rechazadas > 0 && <div>❌ {rechazadas} solicitud(es) rechazada(s).</div>}
+                </div>
+              )}
+              {reservasUsuario.length === 0 ? (
                 <p style={{ color: "var(--texto-secundario)" }}>No hay reservas solicitadas.</p>
               ) : (
                 <div className={styles.listContainer}>
-                  {reservas
-                    .filter((r) => r.correo === user?.email && r.estado !== "Rechazada")
-                    .map((r) => (
+                  {reservasUsuario.map((r) => (
                       <div key={r.id} className={styles.reservaItem}>
                         <div>
                           <strong>Fecha y horario:</strong> {r.fecha} • {r.horaInicio} a {r.horaFin}
                         </div>
                         <div>
-                          <strong>Curso:</strong> {r.curso} | <strong>Personas:</strong> {r.personas}
+                          <strong>Curso:</strong> {r.curso} | <strong>Asignatura:</strong> {r.asignatura || "Sin asignatura"}
+                        </div>
+                        <div>
+                          <strong>Personas:</strong> {r.personas}
                         </div>
                         <div>
                           <strong>Estado:</strong>{" "}

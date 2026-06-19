@@ -32,6 +32,7 @@ export interface Docente {
   fechaNacimiento: string;
   correo: string;
   cursoId?: string;
+  asignaturas?: string[];
 }
 
 export interface ReservaSala {
@@ -44,6 +45,7 @@ export interface ReservaSala {
   horaInicio: string;
   horaFin: string;
   curso: string;
+  asignatura?: string;
   personas: string;
   motivo: string;
   estado: "Pendiente" | "Aprobada" | "Rechazada";
@@ -170,9 +172,9 @@ export const seedInitialAdminData = (): void => {
 
   if (!hasCursos) {
     saveCursosToStorage([
-      { id: "curso-1", nombre: "5°A", profesorId: "doc-1" },
-      { id: "curso-2", nombre: "6°B", profesorId: "doc-2" },
-      { id: "curso-3", nombre: "7°A", profesorId: "doc-3" },
+      { id: "curso-1", nombre: "1° Básico A", profesorId: "doc-1" },
+      { id: "curso-2", nombre: "2° Básico B", profesorId: "doc-2" },
+      { id: "curso-3", nombre: "3° Básico C", profesorId: "doc-3" },
     ]);
   }
 
@@ -207,9 +209,33 @@ export const seedInitialAdminData = (): void => {
 
   if (!hasDocentes) {
     saveDocentesToStorage([
-      { id: "doc-1", nombre: "Carlos Ramírez", rut: "15.678.901-2", fechaNacimiento: "1985-03-20", correo: "carlos.ramirez@laurarobles.cl", cursoId: "curso-1" },
-      { id: "doc-2", nombre: "María Fuentes", rut: "16.789.012-3", fechaNacimiento: "1988-07-14", correo: "maria.fuentes@laurarobles.cl", cursoId: "curso-2" },
-      { id: "doc-3", nombre: "Diego Morales", rut: "17.890.123-4", fechaNacimiento: "1990-01-25", correo: "diego.morales@laurarobles.cl", cursoId: "curso-3" },
+      {
+        id: "doc-1",
+        nombre: "Carlos Ramírez",
+        rut: "15.678.901-2",
+        fechaNacimiento: "1985-03-20",
+        correo: "carlos.ramirez@laurarobles.cl",
+        cursoId: "curso-1",
+        asignaturas: ["Matemáticas", "Ciencias Naturales"],
+      },
+      {
+        id: "doc-2",
+        nombre: "María Fuentes",
+        rut: "16.789.012-3",
+        fechaNacimiento: "1988-07-14",
+        correo: "maria.fuentes@laurarobles.cl",
+        cursoId: "curso-2",
+        asignaturas: ["Lenguaje y Comunicación", "Historia, Geografía y Ciencias Sociales"],
+      },
+      {
+        id: "doc-3",
+        nombre: "Diego Morales",
+        rut: "17.890.123-4",
+        fechaNacimiento: "1990-01-25",
+        correo: "diego.morales@laurarobles.cl",
+        cursoId: "curso-3",
+        asignaturas: ["Inglés", "Educación Física"],
+      },
     ]);
   }
 
@@ -224,7 +250,8 @@ export const seedInitialAdminData = (): void => {
         fecha: new Date().toISOString().slice(0, 10),
         horaInicio: "10:00",
         horaFin: "11:00",
-        curso: "Programación",
+        curso: "5°A",
+        asignatura: "Informática",
         personas: "18",
         motivo: "Clase práctica de informática",
         estado: "Aprobada",
@@ -238,7 +265,8 @@ export const seedInitialAdminData = (): void => {
         fecha: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
         horaInicio: "14:00",
         horaFin: "15:00",
-        curso: "Biología",
+        curso: "6°B",
+        asignatura: "Biología",
         personas: "25",
         motivo: "Uso de software educativo",
         estado: "Pendiente",
@@ -257,6 +285,32 @@ export const seedInitialAdminData = (): void => {
     ]);
   }
 };
+
+export const cursoNiveles = [
+  "Prekínder",
+  "Kinder",
+  "1° Básico",
+  "2° Básico",
+  "3° Básico",
+  "4° Básico",
+  "5° Básico",
+  "6° Básico",
+  "7° Básico",
+  "8° Básico",
+] as const;
+
+export const letrasCurso = ["A", "B", "C", "D"] as const;
+
+export const asignaturaOptions = [
+  "Matemáticas",
+  "Lenguaje y Comunicación",
+  "Ciencias Naturales",
+  "Historia, Geografía y Ciencias Sociales",
+  "Inglés",
+  "Educación Física",
+  "Artes",
+  "Tecnología",
+] as const;
 
 const generateId = (): string =>
   `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;

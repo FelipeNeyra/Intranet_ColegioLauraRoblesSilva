@@ -34,8 +34,14 @@ interface CalificacionForm {
   descripcion: string;
 }
 
-export function CursosPanel() {
-  const [cursos, setCursos] = useState<Curso[]>([]);
+interface CursosPanelProps {
+  cursos?: Curso[];
+  onCursosChange?: (cursos: Curso[]) => void;
+}
+
+export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelProps) {
+  const [internalCursos, setInternalCursos] = useState<Curso[]>([]);
+  const cursos = cursosProp ?? internalCursos;
   const [estudiantes, setEstudiantes] = useState<Estudiante[]>([]);
   const [calificaciones, setCalificaciones] = useState<Calificacion[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -60,6 +66,25 @@ export function CursosPanel() {
     descripcion: "",
   });
 
+  const setCursos = (nextCursos: Curso[] | ((current: Curso[]) => Curso[])) => {
+    if (typeof nextCursos === "function") {
+      const updater = nextCursos as (current: Curso[]) => Curso[];
+      const updatedCursos = updater(cursos);
+      if (onCursosChange) {
+        onCursosChange(updatedCursos);
+      } else {
+        setInternalCursos(updatedCursos);
+      }
+      return;
+    }
+
+    if (onCursosChange) {
+      onCursosChange(nextCursos);
+    } else {
+      setInternalCursos(nextCursos);
+    }
+  };
+
   // Función para formatear RUT automáticamente
   const formatRut = (value: string): string => {
     let rut = value.replace(/[^\d\-]/g, "");
@@ -83,12 +108,14 @@ export function CursosPanel() {
     const cursosData = getCursosFromStorage();
     const estudiantesData = getEstudiantesFromStorage();
     const calificacionesData = getCalificacionesFromStorage();
-    
-    setCursos(cursosData);
+
+    if (!cursosProp) {
+      setInternalCursos(cursosData);
+    }
     setEstudiantes(estudiantesData);
     setCalificaciones(calificacionesData);
     setIsLoaded(true);
-  }, []);
+  }, [cursosProp]);
 
   // Expandir todos los cursos cuando cambien
   useEffect(() => {

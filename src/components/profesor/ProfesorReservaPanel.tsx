@@ -1,11 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./ProfesorReservaPanel.module.css";
 import {
   HorarioBloqueado,
   ReservaSala,
+  asignaturaOptions,
+  cursoNiveles,
+  getDocentesFromStorage,
   getNewReservaSala,
+  letrasCurso,
 } from "../../lib/adminData";
 
 const timeSlots = [
@@ -47,6 +51,7 @@ const getToday = (): string => new Date().toISOString().slice(0, 10);
 interface ProfesorReservaPanelProps {
   userName: string;
   userEmail: string;
+  profesorId: string;
   reservas: ReservaSala[];
   bloqueos: HorarioBloqueado[];
   onReservaCreada: (reserva: ReservaSala) => void;
@@ -55,6 +60,7 @@ interface ProfesorReservaPanelProps {
 export function ProfesorReservaPanel({
   userName,
   userEmail,
+  profesorId,
   reservas,
   bloqueos,
   onReservaCreada,
@@ -62,11 +68,20 @@ export function ProfesorReservaPanel({
   const [weekStart, setWeekStart] = useState<string>(getToday());
   const [selectedSlot, setSelectedSlot] = useState<{ fecha: string; hora: string } | null>(null);
   const [curso, setCurso] = useState("");
+  const [letraCurso, setLetraCurso] = useState("");
+  const [asignatura, setAsignatura] = useState("");
   const [personas, setPersonas] = useState("");
   const [motivo, setMotivo] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
 
   const weekDates = useMemo(() => getWeekDates(new Date(weekStart)), [weekStart]);
+  const docenteActual = useMemo(
+    () => getDocentesFromStorage().find((docente) => docente.id === profesorId),
+    [profesorId]
+  );
+  const asignaturasDisponibles = docenteActual?.asignaturas?.length
+    ? docenteActual.asignaturas
+    : asignaturaOptions;
 
   const getReservasByDate = (date: string) =>
     reservas.filter((reserva) => reserva.fecha === date);
@@ -96,6 +111,8 @@ export function ProfesorReservaPanel({
     if (!isBlocked && !isOccupied) {
       setSelectedSlot({ fecha, hora });
       setCurso("");
+      setLetraCurso("");
+      setAsignatura("");
       setPersonas("");
       setMotivo("");
       setStatusMessage("");
@@ -103,11 +120,12 @@ export function ProfesorReservaPanel({
   };
 
   const handleCrearReserva = () => {
-    if (!selectedSlot || !curso.trim() || !personas.trim() || !motivo.trim()) {
+    if (!selectedSlot || !curso.trim() || !letraCurso.trim() || !asignatura.trim() || !personas.trim() || !motivo.trim()) {
       return;
     }
 
     const horaFin = String(parseInt(selectedSlot.hora) + 1).padStart(2, "0") + ":00";
+    const cursoCompleto = `${curso.trim()} ${letraCurso.trim()}`;
 
     const nuevaReserva = getNewReservaSala({
       nombre: userName.split(" ")[0],
@@ -117,16 +135,18 @@ export function ProfesorReservaPanel({
       fecha: selectedSlot.fecha,
       horaInicio: selectedSlot.hora,
       horaFin,
-      curso: curso.trim(),
+      curso: cursoCompleto,
+      asignatura: asignatura.trim(),
       personas: personas.trim(),
       motivo: motivo.trim(),
       estado: "Pendiente",
     });
 
-    // Solo notificar al padre, quien se encarga de guardar
     onReservaCreada(nuevaReserva);
     setSelectedSlot(null);
     setCurso("");
+    setLetraCurso("");
+    setAsignatura("");
     setPersonas("");
     setMotivo("");
     setStatusMessage(
@@ -255,13 +275,48 @@ export function ProfesorReservaPanel({
             </p>
 
             <div className={styles.formRow}>
-              <input
-                type="text"
-                placeholder="Curso"
+              <select
                 value={curso}
                 onChange={(e) => setCurso(e.target.value)}
                 className={styles.input}
-              />
+              >
+                <option value="">Selecciona un curso</option>
+                {cursoNiveles.map((nivel) => (
+                  <option key={nivel} value={nivel}>
+                    {nivel}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={letraCurso}
+                onChange={(e) => setLetraCurso(e.target.value)}
+                className={styles.input}
+              >
+                <option value="">Selecciona una letra</option>
+                {letrasCurso.map((letra) => (
+                  <option key={letra} value={letra}>
+                    {letra}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className={styles.formRow}>
+              <select
+                value={asignatura}
+                onChange={(e) => setAsignatura(e.target.value)}
+                className={styles.input}
+              >
+                <option value="">Selecciona una asignatura</option>
+                {asignaturasDisponibles.map((asignaturaDisponible) => (
+                  <option key={asignaturaDisponible} value={asignaturaDisponible}>
+                    {asignaturaDisponible}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className={styles.formRow}>
               <input
                 type="text"
                 placeholder="Cantidad de personas"
@@ -283,7 +338,7 @@ export function ProfesorReservaPanel({
                 type="button"
                 onClick={handleCrearReserva}
                 className={styles.confirmButton}
-                disabled={!curso.trim() || !personas.trim() || !motivo.trim()}
+                disabled={!curso.trim() || !letraCurso.trim() || !asignatura.trim() || !personas.trim() || !motivo.trim()}
               >
                 Confirmar Reserva
               </button>
