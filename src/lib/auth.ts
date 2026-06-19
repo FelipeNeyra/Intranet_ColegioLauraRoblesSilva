@@ -69,7 +69,7 @@ const setUsersToStorage = (users: User[]): void => {
 
 const generateUserId = (): string => `user-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
-export const generateGenericProfessorPassword = (): string => `Prof${Math.floor(1000 + Math.random() * 9000)}`;
+export const generateGenericProfessorPassword = (): string => "profe123456";
 
 export const getUserByEmail = (email: string): User | undefined => {
   const users = getUsersFromStorage();

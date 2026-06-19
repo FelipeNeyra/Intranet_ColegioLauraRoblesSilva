@@ -1,8 +1,7 @@
 export interface Curso {
   id: string;
   nombre: string;
-  nivel: "Básico" | "Medio" | "Alto";
-  profesor: string;
+  profesorId: string;
 }
 
 export interface Estudiante {
@@ -12,15 +11,27 @@ export interface Estudiante {
   rut: string;
   fechaNacimiento: string;
   correo: string;
+  cursoId: string;
+}
+
+export interface Calificacion {
+  id: string;
+  estudianteId: string;
+  profesorId: string;
+  cursoId: string;
+  asignatura: string;
+  calificacion: number; // 1-7
+  fecha: string;
+  descripcion?: string;
 }
 
 export interface Docente {
   id: string;
   nombre: string;
-  materia: string;
   rut: string;
   fechaNacimiento: string;
   correo: string;
+  cursoId?: string;
 }
 
 export interface ReservaSala {
@@ -70,6 +81,7 @@ const RESERVAS_SALA_STORAGE_KEY = "intranet_reservas_sala";
 const HORARIOS_BLOQUEADOS_STORAGE_KEY = "intranet_horarios_bloqueados";
 const NOTAS_STORAGE_KEY = "intranet_notas";
 const CITAS_STORAGE_KEY = "intranet_citas";
+const CALIFICACIONES_STORAGE_KEY = "intranet_calificaciones";
 
 const getStorageValue = <T>(key: string, fallback: T): T => {
   if (typeof window === "undefined") {
@@ -118,6 +130,9 @@ export const getNotasFromStorage = (): Nota[] =>
 export const getCitasFromStorage = (): Cita[] =>
   getStorageValue<Cita[]>(CITAS_STORAGE_KEY, []);
 
+export const getCalificacionesFromStorage = (): Calificacion[] =>
+  getStorageValue<Calificacion[]>(CALIFICACIONES_STORAGE_KEY, []);
+
 export const saveCursosToStorage = (cursos: Curso[]): void =>
   setStorageValue(CURSOS_STORAGE_KEY, cursos);
 
@@ -139,6 +154,9 @@ export const saveNotasToStorage = (notas: Nota[]): void =>
 export const saveCitasToStorage = (citas: Cita[]): void =>
   setStorageValue(CITAS_STORAGE_KEY, citas);
 
+export const saveCalificacionesStorage = (calificaciones: Calificacion[]): void =>
+  setStorageValue(CALIFICACIONES_STORAGE_KEY, calificaciones);
+
 export const seedInitialAdminData = (): void => {
   if (typeof window === "undefined") {
     return;
@@ -152,25 +170,37 @@ export const seedInitialAdminData = (): void => {
 
   if (!hasCursos) {
     saveCursosToStorage([
-      { id: "curso-1", nombre: "Matemáticas 101", nivel: "Básico", profesor: "Carlos Ramírez" },
-      { id: "curso-2", nombre: "Historia General", nivel: "Medio", profesor: "María Fuentes" },
-      { id: "curso-3", nombre: "Programación Web", nivel: "Alto", profesor: "Diego Morales" },
+      { id: "curso-1", nombre: "5°A", profesorId: "doc-1" },
+      { id: "curso-2", nombre: "6°B", profesorId: "doc-2" },
+      { id: "curso-3", nombre: "7°A", profesorId: "doc-3" },
     ]);
   }
 
   if (!hasEstudiantes) {
     saveEstudiantesToStorage([
-      { id: "est-1", nombre: "Ana González", grado: "1° Medio", rut: "12.345.678-9", fechaNacimiento: "2008-05-15", correo: "ana.gonzalez@laurarobles.cl" },
-      { id: "est-2", nombre: "Pedro Soto", grado: "2° Medio", rut: "13.456.789-0", fechaNacimiento: "2007-08-22", correo: "pedro.soto@laurarobles.cl" },
-      { id: "est-3", nombre: "Julieta Morales", grado: "3° Medio", rut: "14.567.890-1", fechaNacimiento: "2006-11-10", correo: "julieta.morales@laurarobles.cl" },
+      // Curso 5°A
+      { id: "est-1", nombre: "Ana María González", grado: "5°", rut: "12.345.678-9", fechaNacimiento: "2010-05-15", correo: "ana.gonzalez@laurarobles.cl", cursoId: "curso-1" },
+      { id: "est-2", nombre: "Carlos Rodríguez", grado: "5°", rut: "13.456.789-0", fechaNacimiento: "2010-08-22", correo: "carlos.rodriguez@laurarobles.cl", cursoId: "curso-1" },
+      { id: "est-3", nombre: "María López", grado: "5°", rut: "14.567.890-1", fechaNacimiento: "2010-11-10", correo: "maria.lopez@laurarobles.cl", cursoId: "curso-1" },
+      { id: "est-4", nombre: "Diego Muñoz", grado: "5°", rut: "15.678.901-2", fechaNacimiento: "2010-03-20", correo: "diego.munoz@laurarobles.cl", cursoId: "curso-1" },
+      // Curso 6°B
+      { id: "est-5", nombre: "Sofía García", grado: "6°", rut: "16.789.012-3", fechaNacimiento: "2009-07-14", correo: "sofia.garcia@laurarobles.cl", cursoId: "curso-2" },
+      { id: "est-6", nombre: "Pablo Soto", grado: "6°", rut: "17.890.123-4", fechaNacimiento: "2009-01-25", correo: "pablo.soto@laurarobles.cl", cursoId: "curso-2" },
+      { id: "est-7", nombre: "Catalina Flores", grado: "6°", rut: "18.901.234-5", fechaNacimiento: "2009-09-08", correo: "catalina.flores@laurarobles.cl", cursoId: "curso-2" },
+      { id: "est-8", nombre: "Javier Torres", grado: "6°", rut: "19.012.345-6", fechaNacimiento: "2009-12-16", correo: "javier.torres@laurarobles.cl", cursoId: "curso-2" },
+      // Curso 7°A
+      { id: "est-9", nombre: "Javiera Morales", grado: "7°", rut: "20.123.456-7", fechaNacimiento: "2008-04-11", correo: "javiera.morales@laurarobles.cl", cursoId: "curso-3" },
+      { id: "est-10", nombre: "Roberto Díaz", grado: "7°", rut: "21.234.567-8", fechaNacimiento: "2008-06-28", correo: "roberto.diaz@laurarobles.cl", cursoId: "curso-3" },
+      { id: "est-11", nombre: "Claudia Herrera", grado: "7°", rut: "22.345.678-9", fechaNacimiento: "2008-10-05", correo: "claudia.herrera@laurarobles.cl", cursoId: "curso-3" },
+      { id: "est-12", nombre: "Felipe Ramírez", grado: "7°", rut: "23.456.789-0", fechaNacimiento: "2008-02-19", correo: "felipe.ramirez@laurarobles.cl", cursoId: "curso-3" },
     ]);
   }
 
   if (!hasDocentes) {
     saveDocentesToStorage([
-      { id: "doc-1", nombre: "Carlos Ramírez", materia: "Matemáticas", rut: "15.678.901-2", fechaNacimiento: "1985-03-20", correo: "carlos.ramirez@laurarobles.cl" },
-      { id: "doc-2", nombre: "María Fuentes", materia: "Historia", rut: "16.789.012-3", fechaNacimiento: "1988-07-14", correo: "maria.fuentes@laurarobles.cl" },
-      { id: "doc-3", nombre: "Diego Morales", materia: "Programación", rut: "17.890.123-4", fechaNacimiento: "1990-01-25", correo: "diego.morales@laurarobles.cl" },
+      { id: "doc-1", nombre: "Carlos Ramírez", rut: "15.678.901-2", fechaNacimiento: "1985-03-20", correo: "carlos.ramirez@laurarobles.cl", cursoId: "curso-1" },
+      { id: "doc-2", nombre: "María Fuentes", rut: "16.789.012-3", fechaNacimiento: "1988-07-14", correo: "maria.fuentes@laurarobles.cl", cursoId: "curso-2" },
+      { id: "doc-3", nombre: "Diego Morales", rut: "17.890.123-4", fechaNacimiento: "1990-01-25", correo: "diego.morales@laurarobles.cl", cursoId: "curso-3" },
     ]);
   }
 
@@ -229,6 +259,7 @@ export const getNewReservaSala = (partial: Omit<ReservaSala, "id">): ReservaSala
 export const getNewHorarioBloqueado = (partial: Omit<HorarioBloqueado, "id">): HorarioBloqueado => ({ id: generateId(), ...partial });
 export const getNewNota = (partial: Omit<Nota, "id">): Nota => ({ id: generateId(), ...partial });
 export const getNewCita = (partial: Omit<Cita, "id">): Cita => ({ id: generateId(), ...partial });
+export const getNewCalificacion = (partial: Omit<Calificacion, "id">): Calificacion => ({ id: generateId(), ...partial });
 
 export const validateEmail = (email: string): boolean => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
