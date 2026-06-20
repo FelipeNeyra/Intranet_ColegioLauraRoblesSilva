@@ -1,9 +1,11 @@
+//Definición de interfaces (Estructuras de código que definen parametros y funciones de objetos)
 export interface Curso {
   id: string;
   nombre: string;
   profesorId: string;
 }
 
+//Añadir PreKinder y eliminar cursos de Media
 export interface Estudiante {
   id: string;
   nombre: string;
@@ -51,6 +53,7 @@ export interface ReservaSala {
   estado: "Pendiente" | "Aprobada" | "Rechazada";
 }
 
+//Eliminar esta interfaz
 export interface Nota {
   id: string;
   estudianteId: string;
@@ -76,6 +79,7 @@ export interface HorarioBloqueado {
   motivo: string;
 }
 
+//Instancias de Arrays en localStorage
 const CURSOS_STORAGE_KEY = "intranet_cursos";
 const ESTUDIANTES_STORAGE_KEY = "intranet_estudiantes";
 const DOCENTES_STORAGE_KEY = "intranet_docentes";
@@ -85,6 +89,7 @@ const NOTAS_STORAGE_KEY = "intranet_notas";
 const CITAS_STORAGE_KEY = "intranet_citas";
 const CALIFICACIONES_STORAGE_KEY = "intranet_calificaciones";
 
+//Función que obtiene y parsea datos de localStorage
 const getStorageValue = <T>(key: string, fallback: T): T => {
   if (typeof window === "undefined") {
     return fallback;
@@ -103,6 +108,7 @@ const getStorageValue = <T>(key: string, fallback: T): T => {
   }
 };
 
+//Función que lleva a cabo el registro de datos en localStorage
 const setStorageValue = <T>(key: string, value: T): void => {
   if (typeof window === "undefined") {
     return;
@@ -111,6 +117,7 @@ const setStorageValue = <T>(key: string, value: T): void => {
   window.localStorage.setItem(key, JSON.stringify(value));
 };
 
+//Obtener conjuntos de datos almacenados en localStorage
 export const getCursosFromStorage = (): Curso[] =>
   getStorageValue<Curso[]>(CURSOS_STORAGE_KEY, []);
 
@@ -135,6 +142,8 @@ export const getCitasFromStorage = (): Cita[] =>
 export const getCalificacionesFromStorage = (): Calificacion[] =>
   getStorageValue<Calificacion[]>(CALIFICACIONES_STORAGE_KEY, []);
 
+//Almacenar conjuntos de datos en localStorage
+//Estas funciones se ejecutan directamente desde page.tsx
 export const saveCursosToStorage = (cursos: Curso[]): void =>
   setStorageValue(CURSOS_STORAGE_KEY, cursos);
 
@@ -159,17 +168,21 @@ export const saveCitasToStorage = (citas: Cita[]): void =>
 export const saveCalificacionesStorage = (calificaciones: Calificacion[]): void =>
   setStorageValue(CALIFICACIONES_STORAGE_KEY, calificaciones);
 
+//Función para registrar datos iniciales
+//Estos datos (Cursos, Estudiantes y Docentes) se registran al momento de iniciar sesión por primera vez
 export const seedInitialAdminData = (): void => {
   if (typeof window === "undefined") {
     return;
   }
 
+  //Obtener instancias de Arrays de localStorage
   const hasCursos = window.localStorage.getItem(CURSOS_STORAGE_KEY);
   const hasEstudiantes = window.localStorage.getItem(ESTUDIANTES_STORAGE_KEY);
   const hasDocentes = window.localStorage.getItem(DOCENTES_STORAGE_KEY);
   const hasReservasSala = window.localStorage.getItem(RESERVAS_SALA_STORAGE_KEY);
   const hasHorariosBloqueados = window.localStorage.getItem(HORARIOS_BLOQUEADOS_STORAGE_KEY);
 
+  //Registro inicial de Cursos
   if (!hasCursos) {
     saveCursosToStorage([
       { id: "curso-1", nombre: "1° Básico A", profesorId: "doc-1" },
@@ -178,9 +191,10 @@ export const seedInitialAdminData = (): void => {
     ]);
   }
 
+  //Registro inicial de Estudiantes
   if (!hasEstudiantes) {
     saveEstudiantesToStorage([
-      // Curso 5°A (7 estudiantes)
+      // Curso 1°A (7 estudiantes)
       { id: "est-1", nombre: "Ana María González", grado: "5°", rut: "12.345.678-9", fechaNacimiento: "2010-05-15", correo: "ana.gonzalez@laurarobles.cl", cursoId: "curso-1" },
       { id: "est-2", nombre: "Carlos Rodríguez", grado: "5°", rut: "13.456.789-0", fechaNacimiento: "2010-08-22", correo: "carlos.rodriguez@laurarobles.cl", cursoId: "curso-1" },
       { id: "est-3", nombre: "María López", grado: "5°", rut: "14.567.890-1", fechaNacimiento: "2010-11-10", correo: "maria.lopez@laurarobles.cl", cursoId: "curso-1" },
@@ -188,7 +202,7 @@ export const seedInitialAdminData = (): void => {
       { id: "est-13", nombre: "Valentina Soto", grado: "5°", rut: "24.567.890-1", fechaNacimiento: "2010-09-30", correo: "valentina.soto@laurarobles.cl", cursoId: "curso-1" },
       { id: "est-14", nombre: "Andrés Vega", grado: "5°", rut: "25.678.901-2", fechaNacimiento: "2010-12-12", correo: "andres.vega@laurarobles.cl", cursoId: "curso-1" },
       { id: "est-15", nombre: "Francisca Guzmán", grado: "5°", rut: "26.789.012-3", fechaNacimiento: "2010-04-18", correo: "francisca.guzman@laurarobles.cl", cursoId: "curso-1" },
-      // Curso 6°B (7 estudiantes)
+      // Curso 2°B (7 estudiantes)
       { id: "est-5", nombre: "Sofía García", grado: "6°", rut: "16.789.012-3", fechaNacimiento: "2009-07-14", correo: "sofia.garcia@laurarobles.cl", cursoId: "curso-2" },
       { id: "est-6", nombre: "Pablo Soto", grado: "6°", rut: "17.890.123-4", fechaNacimiento: "2009-01-25", correo: "pablo.soto@laurarobles.cl", cursoId: "curso-2" },
       { id: "est-7", nombre: "Catalina Flores", grado: "6°", rut: "18.901.234-5", fechaNacimiento: "2009-09-08", correo: "catalina.flores@laurarobles.cl", cursoId: "curso-2" },
@@ -196,7 +210,7 @@ export const seedInitialAdminData = (): void => {
       { id: "est-16", nombre: "Marcela Reyes", grado: "6°", rut: "27.890.123-4", fechaNacimiento: "2009-06-22", correo: "marcela.reyes@laurarobles.cl", cursoId: "curso-2" },
       { id: "est-17", nombre: "Ignacio Molina", grado: "6°", rut: "28.901.234-5", fechaNacimiento: "2009-11-05", correo: "ignacio.molina@laurarobles.cl", cursoId: "curso-2" },
       { id: "est-18", nombre: "Constanza Ríos", grado: "6°", rut: "29.012.345-6", fechaNacimiento: "2009-08-17", correo: "constanza.rios@laurarobles.cl", cursoId: "curso-2" },
-      // Curso 7°A (7 estudiantes)
+      // Curso3°C (7 estudiantes)
       { id: "est-9", nombre: "Javiera Morales", grado: "7°", rut: "20.123.456-7", fechaNacimiento: "2008-04-11", correo: "javiera.morales@laurarobles.cl", cursoId: "curso-3" },
       { id: "est-10", nombre: "Roberto Díaz", grado: "7°", rut: "21.234.567-8", fechaNacimiento: "2008-06-28", correo: "roberto.diaz@laurarobles.cl", cursoId: "curso-3" },
       { id: "est-11", nombre: "Claudia Herrera", grado: "7°", rut: "22.345.678-9", fechaNacimiento: "2008-10-05", correo: "claudia.herrera@laurarobles.cl", cursoId: "curso-3" },
@@ -207,6 +221,7 @@ export const seedInitialAdminData = (): void => {
     ]);
   }
 
+  //Registro inicial de Docentes
   if (!hasDocentes) {
     saveDocentesToStorage([
       {
@@ -239,6 +254,7 @@ export const seedInitialAdminData = (): void => {
     ]);
   }
 
+  //Registro inicial de Reservas para Sala de Computación
   if (!hasReservasSala) {
     saveReservaSalaToStorage([
       {
@@ -274,6 +290,7 @@ export const seedInitialAdminData = (): void => {
     ]);
   }
 
+  //Registro inicial de Horarios Bloqueados dentro de las Reservas
   if (!hasHorariosBloqueados) {
     saveHorarioBloqueadoToStorage([
       {
@@ -286,6 +303,7 @@ export const seedInitialAdminData = (): void => {
   }
 };
 
+//Constante que define los niveles (o grados) ácademicos que puede tener un curso
 export const cursoNiveles = [
   "Prekínder",
   "Kinder",
@@ -299,8 +317,10 @@ export const cursoNiveles = [
   "8° Básico",
 ] as const;
 
+//Constante que define la cantidad de niveles que puede tener un curso
 export const letrasCurso = ["A", "B", "C", "D"] as const;
 
+//Constante que define las asignaturas que puede tener un profesor
 export const asignaturaOptions = [
   "Matemáticas",
   "Lenguaje y Comunicación",
@@ -312,9 +332,11 @@ export const asignaturaOptions = [
   "Tecnología",
 ] as const;
 
+//Función para generar un ID
 const generateId = (): string =>
   `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
+//Funciones exportadas que funcionan para crear nuevos objetos en base a sus interfaces y IDs generadas
 export const getNewCurso = (partial: Omit<Curso, "id">): Curso => ({ id: generateId(), ...partial });
 export const getNewEstudiante = (partial: Omit<Estudiante, "id">): Estudiante => ({ id: generateId(), ...partial });
 export const getNewDocente = (partial: Omit<Docente, "id">, customId?: string): Docente => ({ id: customId || generateId(), ...partial });
@@ -324,6 +346,7 @@ export const getNewNota = (partial: Omit<Nota, "id">): Nota => ({ id: generateId
 export const getNewCita = (partial: Omit<Cita, "id">): Cita => ({ id: generateId(), ...partial });
 export const getNewCalificacion = (partial: Omit<Calificacion, "id">): Calificacion => ({ id: generateId(), ...partial });
 
+//Función para establecer automaticamente formato de RUT en formulario
 export const formatRut = (value: string): string => {
   let rut = value.replace(/[^\d\-]/g, "");
   if (rut.length === 0) return "";
@@ -340,14 +363,18 @@ export const formatRut = (value: string): string => {
   return rut.slice(0, -7) + "." + rut.slice(-7, -4) + "." + rut.slice(-4, -1) + "-" + rut.slice(-1);
 };
 
+//Función para validar el formato de Email
 export const validateEmail = (email: string): boolean => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
 
+//Función para validar formato de RUT
 export const validateRut = (rut: string): boolean => {
   const rutRegex = /^\d{1,2}\.\d{3}\.\d{3}-[\dKk]$/;
   return rutRegex.test(rut);
 };
 
+//Grado de Edudación disponible para los Alumnos
+//Añadir PreKinder y quitar cursos de media
 export const gradoOptions = ["Kinder", "1°", "2°", "3°", "4°", "5°", "6°", "7°", "8°", "1° Medio", "2° Medio", "3° Medio", "4° Medio"] as const;
 export const nivelOptions = ["Básico", "Medio", "Alto"] as const;

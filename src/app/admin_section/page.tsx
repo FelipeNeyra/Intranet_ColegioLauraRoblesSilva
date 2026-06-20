@@ -23,7 +23,7 @@ import {
 } from "../../lib/adminData";
 import { addUserAccount, deleteUserByEmail, generateUserId } from "../../lib/auth";
 
-//Lista de Botones disponibles
+//Lista de Botones disponibles en NavBar
 const sections = ["Cursos", "Docentes", "Sala de Computación"] as const;
 type Section = (typeof sections)[number];
 
@@ -35,6 +35,7 @@ interface FormErrors {
   asignaturas?: string;
 }
 
+//Función Principal
 export default function AdminSectionPage() {
   const router = useRouter();
   const { user, logout, isInitializing } = useContext(AuthContext);
@@ -43,14 +44,14 @@ export default function AdminSectionPage() {
   const [docentes, setDocentes] = useState<Docente[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Form for creating new courses
+  //Campos de Formulario para Cursos
   const [showAddCurso, setShowAddCurso] = useState(false);
   const [cursoForm, setCursoForm] = useState({
     nivel: "",
     letra: "",
   });
 
-  // Form for docentes
+  //Campos de Formulario para Docentes
   const [docenteForm, setDocenteForm] = useState({
     nombre: "",
     rut: "",
@@ -64,6 +65,7 @@ export default function AdminSectionPage() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedDocenteId, setSelectedDocenteId] = useState<string>("");
 
+  //Funciones de Inicialización de ruta y registros
   useEffect(() => {
     if (!isInitializing) {
       if (!user) {
@@ -93,10 +95,8 @@ export default function AdminSectionPage() {
     saveDocentesToStorage(docentes);
   }, [cursos, docentes, isLoaded]);
 
-  // Credenciales de profesor creado
+  // Credenciales de un docente recien creado
   const [lastCreatedAccount, setLastCreatedAccount] = useState<{ email: string; password: string } | null>(null);
-
-  // Función para formatear RUT automáticamente
 
   // Función para generar correo automáticamente desde el nombre
   const generateEmail = (nombre: string): string => {
@@ -126,6 +126,7 @@ export default function AdminSectionPage() {
     return `${nombreNormalizado}@laurarobles.cl`;
   };
 
+  //Validación de Formulario de registro de docente.
   const validateDocente = (): boolean => {
     const errors: FormErrors = {};
 
@@ -157,6 +158,7 @@ export default function AdminSectionPage() {
     return Object.keys(errors).length === 0;
   };
 
+  //Función para eliminar un docente
   const handleDeleteDocente = (id: string) => {
     const docente = docentes.find((d) => d.id === id);
     if (docente) {
@@ -166,6 +168,7 @@ export default function AdminSectionPage() {
     setDocentes((current) => current.filter((docente) => docente.id !== id));
   };
 
+  //Función para Asignar curso a un docente
   const handleAssignCurso = (docenteId: string, cursoId: string) => {
     const docente = docentes.find((d) => d.id === docenteId);
     const oldCursoId = docente?.cursoId;
@@ -193,25 +196,32 @@ export default function AdminSectionPage() {
     setSelectedDocenteId("");
   };
 
+  //Función para agregar un nuevo curso
   const handleAddCurso = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    //Verificar presencia de campos
     if (!cursoForm.nivel || !cursoForm.letra) {
       return;
     }
 
+    //Establecer nombre completo
     const nombreCurso = `${cursoForm.nivel} ${cursoForm.letra}`;
+    //Crear curso como objeto 
     const newCurso = getNewCurso({
       nombre: nombreCurso,
       profesorId: "",
     });
 
+    //Guardar curso localmente
     setCursos((current) => [...current, newCurso]);
     setCursoForm({ nivel: "", letra: "" });
     setShowAddCurso(false);
   };
 
+  //Función para eliminar un curso
   const handleDeleteCurso = (id: string) => {
+    //Filtración dejando fuera el curso correspondiente con la ID
     setCursos((current) => current.filter((curso) => curso.id !== id));
     setDocentes((current) =>
       current.map((docente) =>
@@ -220,6 +230,7 @@ export default function AdminSectionPage() {
     );
   };
 
+  //Función para registrar un docente nuevo
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -231,11 +242,13 @@ export default function AdminSectionPage() {
       // Generar un ID único que será usado tanto para el docente como para el usuario
       const userId = generateUserId();
       
+      //Adjuntar asignaturas
       const asignaturas = docenteForm.asignaturas
         .split(",")
         .map((asignatura) => asignatura.trim())
         .filter(Boolean);
 
+      //Crear objeto de docente
       const newDocente = getNewDocente(
         {
           ...docenteForm,
@@ -261,6 +274,7 @@ export default function AdminSectionPage() {
         console.error(e);
       }
 
+      //Limpiar campos del formulario
       setDocenteForm({
         nombre: "",
         rut: "",
@@ -272,6 +286,7 @@ export default function AdminSectionPage() {
     }
   };
 
+  //Sección de Carga en caso de que la página aún se este inicializando
   if (isInitializing) {
     return (
       <main className={styles.page}>
@@ -286,6 +301,7 @@ export default function AdminSectionPage() {
     return null;
   }
 
+  //Sección HTML
   return (
     <div className={styles.page}>
       {/*Titulo de la página*/}
@@ -324,6 +340,7 @@ export default function AdminSectionPage() {
       </header>
 
       <main className={styles.main}>
+        {/*Mensaje que se muestra cuando se crea un docente nuevo*/}
         {lastCreatedAccount && (
           <div style={{ maxWidth: "1100px", margin: "0 auto 2rem", padding: "1.5rem", background: "#ecfdf5", border: "2px solid #10b981", borderRadius: "14px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "1rem" }}>
@@ -358,15 +375,18 @@ export default function AdminSectionPage() {
             </div>
           </div>
         )}
+        {/*Sección para ver Alumnos y Cursos*/}
         <div className={styles.listCard}>
           {activeSection === "Cursos" ? (
             <>
+              {/*Llamada a formulario de CursosPanel*/}
               <CursosPanel cursos={cursos} onCursosChange={setCursos} />
               
               <div style={{ maxWidth: "1100px", margin: "2rem auto 0" }}>
                 <div style={{ padding: "2rem", background: "white", borderRadius: "24px", boxShadow: "0 24px 60px rgba(15, 23, 42, 0.08)" }}>
                   <h3 style={{ marginBottom: "1.5rem", color: "#db353d", fontFamily: "'League Spartan', sans-serif", fontSize: "1.5rem" }}>Crear Nuevo Curso</h3>
                   
+                  {/*Botones para crear un nuevo curso*/}
                   {!showAddCurso ? (
                     <button
                       onClick={() => setShowAddCurso(true)}
