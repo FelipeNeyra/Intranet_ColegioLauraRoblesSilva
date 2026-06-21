@@ -10,6 +10,7 @@ import {
   Curso,
   Docente,
   cursoNiveles,
+  letrasCurso,
   getCursosFromStorage,
   getDocentesFromStorage,
   getNewDocente,
@@ -385,7 +386,7 @@ export default function AdminSectionPage() {
                           className={styles.input}
                         >
                           <option value="">Selecciona una letra</option>
-                          {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((letra) => (
+                          {letrasCurso.map((letra) => (
                             <option key={letra} value={letra}>
                               {letra}
                             </option>

@@ -318,7 +318,7 @@ export const cursoNiveles = [
 ] as const;
 
 //Constante que define la cantidad de niveles que puede tener un curso
-export const letrasCurso = ["A", "B", "C", "D"] as const;
+export const letrasCurso = ["A", "B", "C"] as const;
 
 //Constante que define las asignaturas que puede tener un profesor
 export const asignaturaOptions = [
@@ -348,19 +348,21 @@ export const getNewCalificacion = (partial: Omit<Calificacion, "id">): Calificac
 
 //Función para establecer automaticamente formato de RUT en formulario
 export const formatRut = (value: string): string => {
-  let rut = value.replace(/[^\d\-]/g, "");
-  if (rut.length === 0) return "";
+  const digits = value.replace(/\D/g, "").slice(0, 9);
+  if (!digits) return "";
 
-  if (rut.includes("-")) {
-    const [rutPart, dv] = rut.split("-");
-    rut = rutPart + dv;
+  const body = digits.slice(0, 8);
+  const dv = digits.slice(8, 9);
+
+  let formatted = body;
+
+  if (body.length > 6) {
+    formatted = `${body.slice(0, body.length - 6)}.${body.slice(body.length - 6, body.length - 3)}.${body.slice(body.length - 3)}`;
+  } else if (body.length > 3) {
+    formatted = `${body.slice(0, body.length - 3)}.${body.slice(body.length - 3)}`;
   }
 
-  if (rut.length <= 1) return rut;
-  if (rut.length <= 4) return rut.slice(0, -1) + "." + rut.slice(-1);
-  if (rut.length <= 7) return rut.slice(0, -4) + "." + rut.slice(-4, -1) + "." + rut.slice(-1);
-
-  return rut.slice(0, -7) + "." + rut.slice(-7, -4) + "." + rut.slice(-4, -1) + "-" + rut.slice(-1);
+  return dv ? `${formatted}-${dv}` : formatted;
 };
 
 //Función para validar el formato de Email
