@@ -191,6 +191,11 @@
   cursor: pointer;
 }
 
+.dayColumn .slotCard:disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
 .slotFree {
   background: #ecfdf3;
   color: #166534;
@@ -209,6 +214,18 @@
 .slotBlocked {
   background: #e5e7eb;
   color: #111827;
+}
+
+.slotPast {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.fieldError {
+  display: block;
+  margin-top: 0.35rem;
+  color: #dc2626;
+  font-size: 0.82rem;
 }
 
 .blockList {
@@ -282,6 +299,7 @@
 .deleteButton {
   min-height: 42px;
   border: none;
+  padding: 5px;
   border-radius: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -300,6 +318,16 @@
 .deleteButton {
   background: #e5e7eb;
   color: #111827;
+}
+
+.approveButton:hover{
+  background-color:#166534
+}
+.rejectButton:hover{
+  background-color:#991b1b
+}
+.deleteButton:hover {
+  background-color:#92a2b7
 }
 
 @media (max-width: 640px) {

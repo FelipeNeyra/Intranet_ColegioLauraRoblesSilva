@@ -236,6 +236,8 @@
   white-space: nowrap;
   flex-shrink: 0;
   height: fit-content;
+  width: fit-content;
+  align-self: flex-start;
 }
 
 .actionButton:hover,

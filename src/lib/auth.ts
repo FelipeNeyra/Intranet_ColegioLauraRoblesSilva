@@ -1,3 +1,4 @@
+//Interfaz de Usuarios que podran iniciar Sesión
 export type UserRole = "Administrador" | "Profesor" | "Estudiante";
 
 export interface User {
@@ -8,8 +9,10 @@ export interface User {
   rol: UserRole;
 }
 
+//Instancia de localStorage en donde se guardaran los usuarios
 export const USERS_STORAGE_KEY = "intranet_usuarios";
 
+//Usuarios que se registran al primer momento de abrir la página
 export const initialAdminUsers: User[] = [
   {
     id: "admin-1",
@@ -48,6 +51,7 @@ export const initialAdminUsers: User[] = [
   },
 ];
 
+//Función para obtener los usuarios registrados que pueden iniciar sesión
 export const getUsersFromStorage = (): User[] => {
   if (typeof window === "undefined") {
     return [];
@@ -66,6 +70,8 @@ export const getUsersFromStorage = (): User[] => {
   }
 };
 
+//Función para registrar los usuarios iniciales en localStorage
+//Esta función se llama desde AuthContext.tsx
 export const seedInitialUsers = (): void => {
   if (typeof window === "undefined") {
     return;
@@ -83,20 +89,24 @@ export const seedInitialUsers = (): void => {
   localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(initialAdminUsers));
 };
 
+//Función para registrar posteriores usuarios que podran iniciar sesión
 const setUsersToStorage = (users: User[]): void => {
   if (typeof window === "undefined") return;
   localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
 };
 
+//Funciones para generar un ID y una contraseña para los profesores
 export const generateUserId = (): string => `user-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
 export const generateGenericProfessorPassword = (): string => "profe123456";
 
+//Obtener usuario en base a su Email
 export const getUserByEmail = (email: string): User | undefined => {
   const users = getUsersFromStorage();
   return users.find((u) => u.email === email);
 };
 
+//Función para registrar un nuevo usuario
 export const addUserAccount = (partial: Omit<User, "id" | "password">, customId?: string): { user: User; password: string } | { error: string } => {
   if (typeof window === "undefined") {
     return { error: "No disponible en servidor." };
@@ -117,9 +127,11 @@ export const addUserAccount = (partial: Omit<User, "id" | "password">, customId?
   return { user: newUser, password };
 };
 
+//Eliminar un usuario en base a su Email
 export const deleteUserByEmail = (email: string): boolean => {
   if (typeof window === "undefined") return false;
 
+  //Almancenar a todos los usuarios excepto a aquel con el Email
   const users = getUsersFromStorage();
   const filtered = users.filter((u) => u.email !== email);
 

@@ -9,7 +9,7 @@ export interface Curso {
 export interface Estudiante {
   id: string;
   nombre: string;
-  grado: "Kinder" | "1°" | "2°" | "3°" | "4°" | "5°" | "6°" | "7°" | "8°" | "1° Medio" | "2° Medio" | "3° Medio" | "4° Medio";
+  grado: "PreKinder" | "Kinder" | "1°" | "2°" | "3°" | "4°" | "5°" | "6°" | "7°" | "8°";
   rut: string;
   fechaNacimiento: string;
   correo: string;
@@ -305,7 +305,7 @@ export const seedInitialAdminData = (): void => {
 
 //Constante que define los niveles (o grados) ácademicos que puede tener un curso
 export const cursoNiveles = [
-  "Prekínder",
+  "PreKínder",
   "Kinder",
   "1° Básico",
   "2° Básico",
@@ -375,6 +375,5 @@ export const validateRut = (rut: string): boolean => {
 };
 
 //Grado de Edudación disponible para los Alumnos
-//Añadir PreKinder y quitar cursos de media
-export const gradoOptions = ["Kinder", "1°", "2°", "3°", "4°", "5°", "6°", "7°", "8°", "1° Medio", "2° Medio", "3° Medio", "4° Medio"] as const;
-export const nivelOptions = ["Básico", "Medio", "Alto"] as const;
+export const gradoOptions = ["PreKinder", "Kinder", "1°", "2°", "3°", "4°", "5°", "6°", "7°", "8°"] as const;
+//export const nivelOptions = ["Básico", "Medio", "Alto"] as const;

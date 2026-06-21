@@ -46,7 +46,20 @@ const getWeekDates = (baseDate: Date) => {
   });
 };
 
-const getToday = (): string => new Date().toISOString().slice(0, 10);
+const isDateTimePast = (date: string, time: string) => {
+  const [year, month, day] = date.split("-").map(Number);
+  const [hour, minute] = time.split(":").map(Number);
+  const slotDate = new Date(year, month - 1, day, hour, minute);
+  return slotDate.getTime() < Date.now();
+};
+
+const getToday = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 interface ProfesorReservaPanelProps {
   userName: string;
@@ -108,6 +121,12 @@ export function ProfesorReservaPanel({
     const isBlocked = dayBloqueos.some((bloqueo) => bloqueo.hora === hora);
     const isOccupied = dayReservas.some((reserva) => hora >= reserva.horaInicio && hora < reserva.horaFin);
 
+    const isPastSlot = !isBlocked && !isOccupied && isDateTimePast(fecha, hora);
+
+    if (isPastSlot) {
+      return;
+    }
+
     if (!isBlocked && !isOccupied) {
       setSelectedSlot({ fecha, hora });
       setCurso("");
@@ -121,6 +140,11 @@ export function ProfesorReservaPanel({
 
   const handleCrearReserva = () => {
     if (!selectedSlot || !curso.trim() || !letraCurso.trim() || !asignatura.trim() || !personas.trim() || !motivo.trim()) {
+      return;
+    }
+
+    if (selectedSlot && isDateTimePast(selectedSlot.fecha, selectedSlot.hora)) {
+      setStatusMessage("No se puede reservar un horario que ya pasó.");
       return;
     }
 
@@ -195,6 +219,10 @@ export function ProfesorReservaPanel({
             <span className={`${styles.legendBox} ${styles.occupied}`}></span>
             <span>Aprobado</span>
           </div>
+          <div className={styles.legendItem}>
+            <span className={`${styles.legendBox} ${styles.past}`}></span>
+            <span>Pasado</span>
+          </div>
         </div>
 
         <div className={styles.weekGrid}>
@@ -230,14 +258,16 @@ export function ProfesorReservaPanel({
                   const isBlocked = Boolean(bloqueo);
                   const isPending = Boolean(reservaPendiente);
                   const isOccupied = Boolean(reservaAprobada) || isPending;
+                  const isPastSlot = !isBlocked && !isOccupied && isDateTimePast(date, slot);
                   const isSelected = selectedSlot?.fecha === date && selectedSlot?.hora === slot;
-
                   const slotClass = isBlocked
                     ? styles.slotBlocked
                     : isPending
                     ? styles.slotPending
                     : isOccupied
                     ? styles.slotOccupied
+                    : isPastSlot
+                    ? styles.slotPast
                     : styles.slotFree;
 
                   const slotLabel = isBlocked
@@ -246,6 +276,8 @@ export function ProfesorReservaPanel({
                     ? "Pendiente"
                     : isOccupied
                     ? "Ocupado"
+                    : isPastSlot
+                    ? "Pasado"
                     : "Libre";
 
                   return (
@@ -254,7 +286,7 @@ export function ProfesorReservaPanel({
                       type="button"
                       className={`${styles.slotCard} ${slotClass} ${isSelected ? styles.slotSelected : ""}`}
                       onClick={() => handleSlotClick(date, slot)}
-                      disabled={isBlocked || isOccupied}
+                      disabled={isBlocked || isOccupied || isPastSlot}
                     >
                       {slotLabel}
                     </button>
@@ -273,6 +305,10 @@ export function ProfesorReservaPanel({
             <p className={styles.selectedSlotInfo}>
               <strong>{selectedSlot.fecha}</strong> • <strong>{selectedSlot.hora}</strong>
             </p>
+
+            {selectedSlot && isDateTimePast(selectedSlot.fecha, selectedSlot.hora) && (
+              <p className={styles.error} style={{ marginBottom: "1rem" }}>Este horario ya ha pasado y no puede reservarse.</p>
+            )}
 
             <div className={styles.formRow}>
               <select
@@ -338,7 +374,7 @@ export function ProfesorReservaPanel({
                 type="button"
                 onClick={handleCrearReserva}
                 className={styles.confirmButton}
-                disabled={!curso.trim() || !letraCurso.trim() || !asignatura.trim() || !personas.trim() || !motivo.trim()}
+                  disabled={!curso.trim() || !letraCurso.trim() || !asignatura.trim() || !personas.trim() || !motivo.trim() || (selectedSlot && isDateTimePast(selectedSlot.fecha, selectedSlot.hora))}
               >
                 Confirmar Reserva
               </button>

@@ -387,6 +387,7 @@ export default function AdminSectionPage() {
                   <h3 style={{ marginBottom: "1.5rem", color: "#db353d", fontFamily: "'League Spartan', sans-serif", fontSize: "1.5rem" }}>Crear Nuevo Curso</h3>
                   
                   {/*Botones para crear un nuevo curso*/}
+                  {/*Botón de despliegue*/}
                   {!showAddCurso ? (
                     <button
                       onClick={() => setShowAddCurso(true)}
@@ -396,6 +397,7 @@ export default function AdminSectionPage() {
                     </button>
                   ) : (
                     <form onSubmit={handleAddCurso} className={styles.addForm}>
+                      {/*Campo para seleccionar nivel*/}
                       <div className={styles.inputRow}>
                         <label htmlFor="cursoNivel">Nivel *</label>
                         <select
@@ -412,6 +414,7 @@ export default function AdminSectionPage() {
                           ))}
                         </select>
                       </div>
+                      {/*Campo para seleccionar letra*/}
                       <div className={styles.inputRow}>
                         <label htmlFor="cursoLetra">Letra *</label>
                         <select
@@ -428,6 +431,7 @@ export default function AdminSectionPage() {
                           ))}
                         </select>
                       </div>
+                      {/*Botón para registar curso con sus datos o cancelar*/}
                       <div style={{ display: "flex", gap: "0.75rem" }}>
                         <button
                           type="submit"
@@ -446,6 +450,7 @@ export default function AdminSectionPage() {
                     </form>
                   )}
 
+                  {/*Lista para mostrar cursos registrados*/}
                   {cursos.length > 0 && (
                     <div style={{ marginTop: "1.5rem" }}>
                       <h4 style={{ marginBottom: "1rem", color: "var(--texto-secundario)", fontSize: "1rem" }}>Cursos disponibles:</h4>
@@ -481,9 +486,11 @@ export default function AdminSectionPage() {
                 <p>Registros disponibles en el módulo seleccionado.</p>
               </div>
 
+              {/*Sección de Gestión de Docentes*/}
               <form className={styles.addForm} onSubmit={handleSubmit}>
                 {activeSection === "Docentes" && (
                   <>
+                    {/*Campo de registro de nombre*/}
                     <div className={styles.inputRow}>
                       <label htmlFor="docNombre">Nombre del docente *</label>
                       <input
@@ -508,6 +515,7 @@ export default function AdminSectionPage() {
                       {docenteErrors.nombre ? <span className={styles.error}>{docenteErrors.nombre}</span> : null}
                     </div>
 
+                    {/*Campo de registro de RUT*/}
                     <div className={styles.inputRow}>
                       <label htmlFor="docRut">RUT * (Formato: 12.345.678-9)</label>
                       <input
@@ -525,6 +533,7 @@ export default function AdminSectionPage() {
                       {docenteErrors.rut ? <span className={styles.error}>{docenteErrors.rut}</span> : null}
                     </div>
 
+                    {/*Campo de registro de fecha de nacimiento*/}
                     <div className={styles.inputRow}>
                       <label htmlFor="docFecha">Fecha de nacimiento *</label>
                       <input
@@ -540,6 +549,7 @@ export default function AdminSectionPage() {
                       {docenteErrors.fechaNacimiento ? <span className={styles.error}>{docenteErrors.fechaNacimiento}</span> : null}
                     </div>
 
+                    {/*Campo de registro de correo*/}
                     <div className={styles.inputRow}>
                       <label htmlFor="docCorreo">Correo (Generado automáticamente) *</label>
                       <input
@@ -557,6 +567,7 @@ export default function AdminSectionPage() {
                       {docenteErrors.correo ? <span className={styles.error}>{docenteErrors.correo}</span> : null}
                     </div>
 
+                    {/*Campo de registro de Asignaturas*/}
                     <div className={styles.inputRow}>
                       <label htmlFor="docAsignaturas">Asignaturas del docente *</label>
                       <input
@@ -574,11 +585,13 @@ export default function AdminSectionPage() {
                   </>
                 )}
 
+                {/*Campo de registro de datos de formulario*/}
                 <button type="submit" className={styles.actionButton}>
                   Agregar {activeSection.slice(0, -1)}
                 </button>
               </form>
 
+              {/*Lista de Muestra de Docentes Registrados*/}
               <div className={styles.listContainer}>
                 {activeSection === "Docentes" &&
                   docentes.map((docente) => (
@@ -615,6 +628,7 @@ export default function AdminSectionPage() {
                   ))}
               </div>
 
+              {/*Pestaña que se activa para asignar curso a un docente*/}
               {showAssignModal && selectedDocenteId && (
                 <div style={{
                   position: "fixed",

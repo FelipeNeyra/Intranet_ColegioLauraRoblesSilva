@@ -132,6 +132,11 @@
   border: 1px solid #ef4444;
 }
 
+.legendBox.past {
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+}
+
 .slotPending {
   background: #fef3c7;
   color: #b45309;
@@ -219,6 +224,11 @@
 .slotBlocked {
   background: #e5e7eb;
   color: #111827;
+}
+
+.slotPast {
+  background: #dbeafe;
+  color: #1d4ed8;
 }
 
 .slotSelected {
