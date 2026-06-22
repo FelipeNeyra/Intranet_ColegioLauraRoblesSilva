@@ -49,16 +49,28 @@ const isDateTimePast = (date: string, time: string) => {
 };
 
 //Función para obtener los días de la semana presente
-const getWeekDates = (baseDate: Date) => {
-  const start = new Date(baseDate);
+const parseLocalDate = (dateString: string): Date => {
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const formatLocalDate = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const getWeekDates = (baseDate: Date | string) => {
+  const start = typeof baseDate === "string" ? parseLocalDate(baseDate) : new Date(baseDate);
   const day = start.getDay();
-  const diff = day === 0 ? -6 : 0 - day;
+  const diff = day === 0 ? -6 : 1 - day;
   start.setDate(start.getDate() + diff);
 
   return weekDays.map((_, index) => {
     const date = new Date(start);
     date.setDate(start.getDate() + index);
-    return date.toISOString().slice(0, 10);
+    return formatLocalDate(date);
   });
 };
 
@@ -222,16 +234,16 @@ export function SalaComputacionPanel() {
 
   //Función para avanzar a la siguiente semana
   const goToPreviousWeek = () => {
-    const current = new Date(weekStart);
+    const current = parseLocalDate(weekStart);
     current.setDate(current.getDate() - 7);
-    setWeekStart(current.toISOString().slice(0, 10));
+    setWeekStart(formatLocalDate(current));
   };
 
   //Función para avanzar a la semana anterior
   const goToNextWeek = () => {
-    const current = new Date(weekStart);
+    const current = parseLocalDate(weekStart);
     current.setDate(current.getDate() + 7);
-    setWeekStart(current.toISOString().slice(0, 10));
+    setWeekStart(formatLocalDate(current));
   };
 
   //Sección HTML
