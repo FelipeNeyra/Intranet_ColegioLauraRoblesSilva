@@ -5,15 +5,12 @@ import styles from "./CursosPanel.module.css";
 import {
   Curso,
   Estudiante,
-  Calificacion,
   getCursosFromStorage,
   getEstudiantesFromStorage,
-  getCalificacionesFromStorage,
   saveCursosToStorage,
   saveEstudiantesToStorage,
-  saveCalificacionesStorage,
   getNewEstudiante,
-  getNewCalificacion,
+  
   validateEmail,
   validateRut,
   formatRut,
@@ -29,11 +26,7 @@ interface FormErrors {
   curso?: string;
 }
 
-interface CalificacionForm {
-  asignatura: string;
-  calificacion: number;
-  descripcion: string;
-}
+
 
 interface CursosPanelProps {
   cursos?: Curso[];
@@ -44,7 +37,7 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
   const [internalCursos, setInternalCursos] = useState<Curso[]>([]);
   const cursos = cursosProp ?? internalCursos;
   const [estudiantes, setEstudiantes] = useState<Estudiante[]>([]);
-  const [calificaciones, setCalificaciones] = useState<Calificacion[]>([]);
+  
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Form states
@@ -60,12 +53,7 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
   const [estudianteErrors, setEstudianteErrors] = useState<FormErrors>({});
 
   const [expandedCursos, setExpandedCursos] = useState<Set<string>>(new Set());
-  const [calificacionFormFor, setCalificacionFormFor] = useState<string | null>(null);
-  const [calificacionForm, setCalificacionForm] = useState<CalificacionForm>({
-    asignatura: "",
-    calificacion: 6,
-    descripcion: "",
-  });
+  
 
   const setCursos = (nextCursos: Curso[] | ((current: Curso[]) => Curso[])) => {
     if (typeof nextCursos === "function") {
@@ -90,13 +78,13 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
     seedInitialAdminData();
     const cursosData = getCursosFromStorage();
     const estudiantesData = getEstudiantesFromStorage();
-    const calificacionesData = getCalificacionesFromStorage();
+    
 
     if (!cursosProp) {
       setInternalCursos(cursosData);
     }
     setEstudiantes(estudiantesData);
-    setCalificaciones(calificacionesData);
+    
     setIsLoaded(true);
   }, [cursosProp]);
 
@@ -113,8 +101,32 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
     if (!isLoaded) return;
     saveCursosToStorage(cursos);
     saveEstudiantesToStorage(estudiantes);
-    saveCalificacionesStorage(calificaciones);
-  }, [cursos, estudiantes, calificaciones, isLoaded]);
+  }, [cursos, estudiantes, isLoaded]);
+
+  const generateEmail = (nombre: string): string => {
+    if (!nombre.trim()) return "";
+
+    const partes = nombre.trim().toLowerCase().split(/\s+/);
+    if (partes.length === 0) return "";
+
+    const primerNombre = partes[0];
+    const apellido = partes.length > 1 ? partes[1] : "";
+
+    const normalizarTexto = (texto: string) => {
+      return texto
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, "");
+    };
+
+    const nombreNormalizado = normalizarTexto(primerNombre);
+    const apellidoNormalizado = normalizarTexto(apellido);
+
+    if (apellidoNormalizado) {
+      return `${nombreNormalizado}.${apellidoNormalizado}@laurarobles.cl`;
+    }
+    return `${nombreNormalizado}@laurarobles.cl`;
+  };
 
   const validateEstudiante = (): boolean => {
     const errors: FormErrors = {};
@@ -172,34 +184,7 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
     });
   };
 
-  const handleAddCalificacion = (e: FormEvent<HTMLFormElement>, estudianteId: string) => {
-    e.preventDefault();
-
-    if (!calificacionForm.asignatura.trim() || calificacionForm.calificacion < 1 || calificacionForm.calificacion > 7) {
-      return;
-    }
-
-    const estudiante = estudiantes.find((e) => e.id === estudianteId);
-    if (!estudiante) return;
-
-    const nuevaCalificacion = getNewCalificacion({
-      estudianteId,
-      profesorId: "admin",
-      cursoId: estudiante.cursoId,
-      asignatura: calificacionForm.asignatura,
-      calificacion: calificacionForm.calificacion,
-      fecha: new Date().toISOString().slice(0, 10),
-      descripcion: calificacionForm.descripcion,
-    });
-
-    setCalificaciones([...calificaciones, nuevaCalificacion]);
-    setCalificacionFormFor(null);
-    setCalificacionForm({
-      asignatura: "",
-      calificacion: 6,
-      descripcion: "",
-    });
-  };
+  
 
   const toggleCurso = (cursoId: string) => {
     const newSet = new Set(expandedCursos);
@@ -213,12 +198,10 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
 
   const getEstudiantesByCurso = (cursoId: string) => estudiantes.filter((e) => e.cursoId === cursoId);
 
-  const getCalificacionesByEstudiante = (estudianteId: string) =>
-    calificaciones.filter((c) => c.estudianteId === estudianteId);
+  
 
   const deleteEstudiante = (estudianteId: string) => {
     setEstudiantes((current) => current.filter((e) => e.id !== estudianteId));
-    setCalificaciones((current) => current.filter((c) => c.estudianteId !== estudianteId));
   };
 
   return (
@@ -246,9 +229,11 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
                 type="text"
                 value={estudianteForm.nombre}
                 onChange={(e) => {
-                  if (/^[a-záéíóúñA-ZÁÉÍÓÚÑ\s]*$/.test(e.target.value) || e.target.value === "") {
-                    setEstudianteForm({ ...estudianteForm, nombre: e.target.value });
-                    setEstudianteErrors((current) => ({ ...current, nombre: "" }));
+                  const nuevo = e.target.value;
+                  if (/^[a-záéíóúñA-ZÁÉÍÓÚÑ\s]*$/.test(nuevo) || nuevo === "") {
+                    const correoAutomatico = generateEmail(nuevo);
+                    setEstudianteForm({ ...estudianteForm, nombre: nuevo, correo: correoAutomatico });
+                    setEstudianteErrors((current) => ({ ...current, nombre: "", correo: "" }));
                   }
                 }}
                 className={styles.input}
@@ -293,15 +278,9 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
               <input
                 type="email"
                 value={estudianteForm.correo}
-                onChange={(e) => {
-                  const correo = e.target.value;
-                  if (/^[a-zA-Z0-9.@_-]*$/.test(correo) || correo === "") {
-                    setEstudianteForm({ ...estudianteForm, correo: correo });
-                    setEstudianteErrors((current) => ({ ...current, correo: "" }));
-                  }
-                }}
+                readOnly
                 className={styles.input}
-                placeholder="Ej: juan.perez@laurarobles.cl"
+                placeholder="correo@laurarobles.cl"
               />
               {estudianteErrors.correo && <span className={styles.error}>{estudianteErrors.correo}</span>}
             </div>
@@ -369,8 +348,6 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
                   ) : (
                     <div className={styles.estudiantes}>
                       {estudiantosCurso.map((estudiante) => {
-                        const calificacionesEst = getCalificacionesByEstudiante(estudiante.id);
-
                         return (
                           <div key={estudiante.id} className={styles.estudianteCard}>
                             <div className={styles.estudianteInfo}>
@@ -382,95 +359,12 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
 
                             <div className={styles.estudianteActions}>
                               <button
-                                className={styles.actionButton}
-                                onClick={() => setCalificacionFormFor(estudiante.id)}
-                              >
-                                Agregar Calificación
-                              </button>
-                              <button className={styles.actionButton}>Citar Apoderado</button>
-                              <button
                                 className={styles.dangerButton}
                                 onClick={() => deleteEstudiante(estudiante.id)}
                               >
                                 Eliminar
                               </button>
                             </div>
-
-                            {calificacionFormFor === estudiante.id && (
-                              <form
-                                onSubmit={(e) => handleAddCalificacion(e, estudiante.id)}
-                                className={styles.calificacionForm}
-                              >
-                                <div className={styles.formGroup}>
-                                  <label>Asignatura *</label>
-                                  <input
-                                    type="text"
-                                    value={calificacionForm.asignatura}
-                                    onChange={(e) =>
-                                      setCalificacionForm({ ...calificacionForm, asignatura: e.target.value })
-                                    }
-                                    placeholder="Ej: Matemática"
-                                    className={styles.input}
-                                  />
-                                </div>
-
-                                <div className={styles.formGroup}>
-                                  <label>Calificación (1-7) *</label>
-                                  <input
-                                    type="number"
-                                    min="1"
-                                    max="7"
-                                    value={calificacionForm.calificacion}
-                                    onChange={(e) =>
-                                      setCalificacionForm({
-                                        ...calificacionForm,
-                                        calificacion: parseFloat(e.target.value),
-                                      })
-                                    }
-                                    className={styles.input}
-                                  />
-                                </div>
-
-                                <div className={styles.formGroup}>
-                                  <label>Descripción</label>
-                                  <textarea
-                                    value={calificacionForm.descripcion}
-                                    onChange={(e) =>
-                                      setCalificacionForm({ ...calificacionForm, descripcion: e.target.value })
-                                    }
-                                    placeholder="Comentarios (opcional)"
-                                    className={styles.textarea}
-                                  />
-                                </div>
-
-                                <div className={styles.formActions}>
-                                  <button type="submit" className={styles.primaryButton}>
-                                    Guardar Calificación
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setCalificacionFormFor(null)}
-                                    className={styles.secondaryButton}
-                                  >
-                                    Cancelar
-                                  </button>
-                                </div>
-                              </form>
-                            )}
-
-                            {calificacionesEst.length > 0 && (
-                              <div className={styles.calificacionesList}>
-                                <h5>Calificaciones</h5>
-                                {calificacionesEst.map((cal) => (
-                                  <div key={cal.id} className={styles.calificacionItem}>
-                                    <p>
-                                      <strong>{cal.asignatura}</strong>: {cal.calificacion} ({cal.fecha})
-                                    </p>
-                                    {cal.descripcion && <p>{cal.descripcion}</p>}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
                           </div>
                         );
                       })}
