@@ -99,7 +99,9 @@ export function ProfesorReservaPanel({
   const [motivo, setMotivo] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
 
-  const weekDates = useMemo(() => getWeekDates(new Date(weekStart)), [weekStart]);
+  const weekStartArreglado = new Date(weekStart)
+  weekStartArreglado.setDate(weekStartArreglado.getDate() + 1);
+  const weekDates = useMemo(() => getWeekDates(new Date(weekStartArreglado)), [weekStart]);
   const docenteActual = useMemo(
     () => getDocentesFromStorage().find((docente) => docente.id === profesorId),
     [profesorId]

@@ -10,7 +10,7 @@ import {
   saveCursosToStorage,
   saveEstudiantesToStorage,
   getNewEstudiante,
-  
+
   validateEmail,
   validateRut,
   formatRut,
@@ -91,9 +91,6 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
   // Expandir todos los cursos cuando cambien
   useEffect(() => {
     if (cursos.length > 0) {
-      // Comentado: ya no expandir automáticamente
-      // const expandedSet = new Set(cursos.map((c) => c.id));
-      // setExpandedCursos(expandedSet);
     }
   }, [cursos.length]);
 

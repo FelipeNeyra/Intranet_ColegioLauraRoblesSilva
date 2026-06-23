@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Este proyecto fue creado con [Next.js](https://nextjs.org), con el parámetro [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+## Iniciar Proyecto
 
-First, run the development server:
+Correr en CMD y en ruta de almacenamiento los siguientes comandos:
 
 ```bash
+npm install
+# luego
 npm run dev
-# or
+# o
 yarn dev
-# or
+# o
 pnpm dev
-# or
+# o
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abrir [http://localhost:3000](http://localhost:3000) en el navegador para ver.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Explicación de Modulos
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Iniciar Sesión:
+Permite y valida el ingreso de creedenciales de usuario (Correo y Contraseña) para determinar el
+usuario que ingrese, ya sea un administrador o profesor, y redirigirlo a su apartado correspondiente.
+Mediante el uso de AuthContext se verifica si ya existe una sesión iniciada con anterioridad, lo que
+impide el ingreso desde otras rutas y mantiene la sesión iniciada incluo tras cerrar la página.
 
-## Learn More
+- Panel de Administración:
+Permite el registro, modificación, eliminación de estudiantes, cursos y profesores. 
+A su vez, permite la asignación de un curso a un profesor.
+Integra un panel de reservas para sala de computación, el cual permite la búsqueda, el 
+establecimiento y aprobación de reservas y bloqueos de un horario de un día específico.
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Panel de Profesores:
+Permite el establecimiento de notas y citas de apoderados a los alumnos pertenecientes
+al curso que tiene asignado. Se implementa, de igual forma, un panel de reservas para 
+sala de computación el cuál permite hacer solicitudes de reservas para un horario y dias
+establecidos.

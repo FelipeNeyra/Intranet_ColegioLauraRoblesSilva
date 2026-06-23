@@ -53,15 +53,6 @@ export interface ReservaSala {
   estado: "Pendiente" | "Aprobada" | "Rechazada";
 }
 
-//Eliminar esta interfaz
-export interface Nota {
-  id: string;
-  estudianteId: string;
-  profesorId: string;
-  fecha: string;
-  texto: string;
-}
-
 export interface Cita {
   id: string;
   estudianteId: string;
@@ -85,7 +76,6 @@ const ESTUDIANTES_STORAGE_KEY = "intranet_estudiantes";
 const DOCENTES_STORAGE_KEY = "intranet_docentes";
 const RESERVAS_SALA_STORAGE_KEY = "intranet_reservas_sala";
 const HORARIOS_BLOQUEADOS_STORAGE_KEY = "intranet_horarios_bloqueados";
-const NOTAS_STORAGE_KEY = "intranet_notas";
 const CITAS_STORAGE_KEY = "intranet_citas";
 const CALIFICACIONES_STORAGE_KEY = "intranet_calificaciones";
 
@@ -133,9 +123,6 @@ export const getReservaSalaFromStorage = (): ReservaSala[] =>
 export const getHorarioBloqueadoFromStorage = (): HorarioBloqueado[] =>
   getStorageValue<HorarioBloqueado[]>(HORARIOS_BLOQUEADOS_STORAGE_KEY, []);
 
-export const getNotasFromStorage = (): Nota[] =>
-  getStorageValue<Nota[]>(NOTAS_STORAGE_KEY, []);
-
 export const getCitasFromStorage = (): Cita[] =>
   getStorageValue<Cita[]>(CITAS_STORAGE_KEY, []);
 
@@ -158,9 +145,6 @@ export const saveReservaSalaToStorage = (reservas: ReservaSala[]): void =>
 
 export const saveHorarioBloqueadoToStorage = (bloqueos: HorarioBloqueado[]): void =>
   setStorageValue(HORARIOS_BLOQUEADOS_STORAGE_KEY, bloqueos);
-
-export const saveNotasToStorage = (notas: Nota[]): void =>
-  setStorageValue(NOTAS_STORAGE_KEY, notas);
 
 export const saveCitasToStorage = (citas: Cita[]): void =>
   setStorageValue(CITAS_STORAGE_KEY, citas);
@@ -342,7 +326,6 @@ export const getNewEstudiante = (partial: Omit<Estudiante, "id">): Estudiante =>
 export const getNewDocente = (partial: Omit<Docente, "id">, customId?: string): Docente => ({ id: customId || generateId(), ...partial });
 export const getNewReservaSala = (partial: Omit<ReservaSala, "id">): ReservaSala => ({ id: generateId(), ...partial });
 export const getNewHorarioBloqueado = (partial: Omit<HorarioBloqueado, "id">): HorarioBloqueado => ({ id: generateId(), ...partial });
-export const getNewNota = (partial: Omit<Nota, "id">): Nota => ({ id: generateId(), ...partial });
 export const getNewCita = (partial: Omit<Cita, "id">): Cita => ({ id: generateId(), ...partial });
 export const getNewCalificacion = (partial: Omit<Calificacion, "id">): Calificacion => ({ id: generateId(), ...partial });
 

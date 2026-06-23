@@ -128,7 +128,9 @@ export function SalaComputacionPanel() {
 
 
   //Constante para obtener los días de la semana presente
-  const weekDates = useMemo(() => getWeekDates(new Date(weekStart)), [weekStart]);
+  const weekStartArreglado = new Date(weekStart)
+  weekStartArreglado.setDate(weekStartArreglado.getDate() + 1);
+  const weekDates = useMemo(() => getWeekDates(new Date(weekStartArreglado)), [weekStart]);
 
   //Verificación de estado de reservas registradas
   const reservasPendientes = useMemo(
@@ -298,6 +300,7 @@ export function SalaComputacionPanel() {
               />
               {bloqueoErrors.fecha ? <span className={styles.fieldError}>{bloqueoErrors.fecha}</span> : null}
             </label>
+
             <label className={styles.blockField}>
               <span className={styles.blockLabel}>Hora</span>
               <input
@@ -309,6 +312,7 @@ export function SalaComputacionPanel() {
               />
               {bloqueoErrors.hora ? <span className={styles.fieldError}>{bloqueoErrors.hora}</span> : null}
             </label>
+            
             <label className={styles.blockFieldWide}>
               <span className={styles.blockLabel}>Motivo</span>
               <input
