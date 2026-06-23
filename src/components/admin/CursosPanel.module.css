@@ -298,6 +298,32 @@
   font-size: 12px;
 }
 
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+}
+
+.modalContent {
+  width: 100%;
+  max-width: 560px;
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.18);
+}
+
+.modalTitle {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #db353d;
+}
+
 @media (max-width: 768px) {
   .panel {
     padding: 16px;

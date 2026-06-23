@@ -127,6 +127,24 @@ export const addUserAccount = (partial: Omit<User, "id" | "password">, customId?
   return { user: newUser, password };
 };
 
+//Actualizar un usuario existente por correo antiguo
+export const updateUserByEmail = (oldEmail: string, updates: Partial<Omit<User, "password" | "id">>): boolean => {
+  if (typeof window === "undefined") return false;
+
+  const users = getUsersFromStorage();
+  const index = users.findIndex((user) => user.email === oldEmail);
+  if (index === -1) return false;
+
+  if (updates.email && updates.email !== oldEmail) {
+    const collision = users.some((user) => user.email === updates.email);
+    if (collision) return false;
+  }
+
+  users[index] = { ...users[index], ...updates };
+  setUsersToStorage(users);
+  return true;
+};
+
 //Eliminar un usuario en base a su Email
 export const deleteUserByEmail = (email: string): boolean => {
   if (typeof window === "undefined") return false;

@@ -22,7 +22,7 @@ import {
   validateRut,
   formatRut,
 } from "../../../lib/adminData";
-import { addUserAccount, deleteUserByEmail, generateUserId } from "../../../lib/auth";
+import { addUserAccount, deleteUserByEmail, generateUserId, getUserByEmail, updateUserByEmail } from "../../../lib/auth";
 
 const sections = ["Cursos", "Docentes", "Sala de Computación"] as const;
 type Section = (typeof sections)[number];
@@ -66,6 +66,16 @@ export default function AdminSectionPage() {
   const [docenteErrors, setDocenteErrors] = useState<FormErrors>({});
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedDocenteId, setSelectedDocenteId] = useState<string>("");
+  const [showEditDocente, setShowEditDocente] = useState(false);
+  const [editDocenteId, setEditDocenteId] = useState<string | null>(null);
+  const [editDocenteForm, setEditDocenteForm] = useState({
+    nombre: "",
+    rut: "",
+    fechaNacimiento: "",
+    correo: "",
+    asignaturas: "",
+  });
+  const [editDocenteErrors, setEditDocenteErrors] = useState<FormErrors>({});
   const [lastCreatedAccount, setLastCreatedAccount] = useState<{ email: string; password: string } | null>(null);
 
   useEffect(() => {
@@ -122,35 +132,106 @@ export default function AdminSectionPage() {
     return `${nombreNormalizado}@laurarobles.cl`;
   };
 
-  const validateDocente = (): boolean => {
+  const getDocenteFormErrors = (form: typeof docenteForm | typeof editDocenteForm): FormErrors => {
     const errors: FormErrors = {};
 
-    if (!docenteForm.nombre.trim()) {
+    if (!form.nombre.trim()) {
       errors.nombre = "El nombre del docente es requerido.";
     }
 
-    if (!docenteForm.rut.trim()) {
+    if (!form.rut.trim()) {
       errors.rut = "El RUT es requerido.";
-    } else if (!validateRut(docenteForm.rut)) {
+    } else if (!validateRut(form.rut)) {
       errors.rut = "El RUT debe cumplir el formato 12.345.678-9.";
     }
 
-    if (!docenteForm.fechaNacimiento.trim()) {
+    if (!form.fechaNacimiento.trim()) {
       errors.fechaNacimiento = "La fecha de nacimiento es requerida.";
     }
 
-    if (!docenteForm.correo.trim()) {
+    if (!form.correo.trim()) {
       errors.correo = "El correo es requerido.";
-    } else if (!validateEmail(docenteForm.correo)) {
+    } else if (!validateEmail(form.correo)) {
       errors.correo = "El correo debe incluir el símbolo @.";
     }
 
-    if (!docenteForm.asignaturas.trim()) {
+    if (!form.asignaturas.trim()) {
       errors.asignaturas = "Debe indicar al menos una asignatura.";
     }
 
-    setDocenteErrors(errors);
-    return Object.keys(errors).length === 0;
+    return errors;
+  };
+
+  const openEditDocente = (docente: Docente) => {
+    setEditDocenteId(docente.id);
+    setEditDocenteForm({
+      nombre: docente.nombre,
+      rut: docente.rut,
+      fechaNacimiento: docente.fechaNacimiento,
+      correo: docente.correo,
+      asignaturas: docente.asignaturas?.join(", ") || "",
+    });
+    setEditDocenteErrors({});
+    setShowEditDocente(true);
+  };
+
+  const closeEditDocente = () => {
+    setShowEditDocente(false);
+    setEditDocenteId(null);
+    setEditDocenteErrors({});
+  };
+
+  const handleUpdateDocente = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editDocenteId) return;
+
+    const updatedDocente = {
+      nombre: editDocenteForm.nombre,
+      rut: editDocenteForm.rut,
+      fechaNacimiento: editDocenteForm.fechaNacimiento,
+      correo: editDocenteForm.correo,
+      asignaturas: editDocenteForm.asignaturas,
+    };
+
+    const errors = getDocenteFormErrors(editDocenteForm);
+    setEditDocenteErrors(errors);
+
+    if (Object.keys(errors).length > 0) return;
+
+    const oldDocente = docentes.find((doc) => doc.id === editDocenteId);
+    if (!oldDocente) return;
+
+    const emailInUse = docentes.some(
+      (doc) => doc.correo === updatedDocente.correo && doc.id !== editDocenteId
+    );
+
+    if (emailInUse) {
+      setEditDocenteErrors({ ...errors, correo: "Ya existe un docente con ese correo." });
+      return;
+    }
+
+    const authUser = getUserByEmail(oldDocente.correo);
+    if (authUser) {
+      const authUpdated = updateUserByEmail(oldDocente.correo, {
+        nombre: updatedDocente.nombre,
+        email: updatedDocente.correo,
+      });
+
+      if (!authUpdated) {
+        setEditDocenteErrors({ ...errors, correo: "El correo ya está en uso por otro usuario." });
+        return;
+      }
+    }
+
+    setDocentes((current) =>
+      current.map((docente) =>
+        docente.id === editDocenteId
+          ? { ...docente, ...updatedDocente, asignaturas: updatedDocente.asignaturas.split(",").map((a) => a.trim()).filter(Boolean) }
+          : docente
+      )
+    );
+
+    closeEditDocente();
   };
 
   const handleDeleteDocente = (id: string) => {
@@ -216,7 +297,9 @@ export default function AdminSectionPage() {
     event.preventDefault();
 
     if (activeSection === "Docentes") {
-      if (!validateDocente()) {
+      const errors = getDocenteFormErrors(docenteForm);
+      setDocenteErrors(errors);
+      if (Object.keys(errors).length > 0) {
         return;
       }
 
@@ -515,6 +598,13 @@ export default function AdminSectionPage() {
                         <button
                           type="button"
                           className={styles.actionButton}
+                          onClick={() => openEditDocente(docente)}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.actionButton}
                           onClick={() => {
                             setSelectedDocenteId(docente.id);
                             setShowAssignModal(true);
@@ -565,9 +655,91 @@ export default function AdminSectionPage() {
           ) : (
             <SalaComputacionPanel />
           )}
+
+          {showEditDocente && (
+            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem", zIndex: 40 }}>
+              <div style={{ width: "100%", maxWidth: "560px", background: "white", borderRadius: "20px", padding: "1.5rem", boxShadow: "0 30px 80px rgba(15, 23, 42, 0.18)" }}>
+                <h3 style={{ marginBottom: "1rem", color: "#db353d" }}>Editar Docente</h3>
+                <form onSubmit={handleUpdateDocente} style={{ display: "grid", gap: "1rem" }}>
+                  <div>
+                    <label style={{ display: "block", marginBottom: "0.5rem", color: "#475569" }}>Nombre del docente *</label>
+                    <input
+                      value={editDocenteForm.nombre}
+                      onChange={(event) => {
+                        const nombre = event.target.value;
+                        const correoAutomatico = generateEmail(nombre);
+                        if (/^[a-záéíóúñA-ZÁÉÍÓÚÑ\s]*$/.test(nombre) || nombre === "") {
+                          setEditDocenteForm((current) => ({ ...current, nombre, correo: correoAutomatico }));
+                          setEditDocenteErrors((current) => ({ ...current, nombre: "", correo: "" }));
+                        }
+                      }}
+                      className={styles.input}
+                      placeholder="Carlos Ramírez"
+                    />
+                    {editDocenteErrors.nombre ? <span className={styles.error}>{editDocenteErrors.nombre}</span> : null}
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", marginBottom: "0.5rem", color: "#475569" }}>RUT *</label>
+                    <input
+                      value={editDocenteForm.rut}
+                      onChange={(event) => {
+                        const rutFormateado = formatRut(event.target.value);
+                        setEditDocenteForm((current) => ({ ...current, rut: rutFormateado }));
+                        setEditDocenteErrors((current) => ({ ...current, rut: "" }));
+                      }}
+                      className={styles.input}
+                      placeholder="12.345.678-9"
+                    />
+                    {editDocenteErrors.rut ? <span className={styles.error}>{editDocenteErrors.rut}</span> : null}
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", marginBottom: "0.5rem", color: "#475569" }}>Fecha de nacimiento *</label>
+                    <input
+                      type="date"
+                      value={editDocenteForm.fechaNacimiento}
+                      onChange={(event) => {
+                        setEditDocenteForm((current) => ({ ...current, fechaNacimiento: event.target.value }));
+                        setEditDocenteErrors((current) => ({ ...current, fechaNacimiento: "" }));
+                      }}
+                      className={styles.input}
+                    />
+                    {editDocenteErrors.fechaNacimiento ? <span className={styles.error}>{editDocenteErrors.fechaNacimiento}</span> : null}
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", marginBottom: "0.5rem", color: "#475569" }}>Correo *</label>
+                    <input
+                      value={editDocenteForm.correo}
+                      readOnly
+                      className={styles.input}
+                      placeholder="correo@laurarobles.cl"
+                    />
+                    {editDocenteErrors.correo ? <span className={styles.error}>{editDocenteErrors.correo}</span> : null}
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", marginBottom: "0.5rem", color: "#475569" }}>Asignaturas del docente *</label>
+                    <input
+                      value={editDocenteForm.asignaturas}
+                      onChange={(event) => setEditDocenteForm((current) => ({ ...current, asignaturas: event.target.value }))}
+                      className={styles.input}
+                      placeholder="Matemáticas, Inglés"
+                    />
+                    {editDocenteErrors.asignaturas ? <span className={styles.error}>{editDocenteErrors.asignaturas}</span> : null}
+                  </div>
+
+                  <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+                    <button type="submit" className={styles.actionButton}>Guardar cambios</button>
+                    <button type="button" className={styles.secondaryButton} onClick={closeEditDocente}>Cancelar</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       </main>
-
       <footer className={styles.footer}>
         <p>Intranet - Colegio Laura Robles Silva - Sección Administrador</p>
       </footer>

@@ -42,15 +42,21 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
 
   // Form states
   const [showAddEstudiante, setShowAddEstudiante] = useState(false);
-  const [estudianteForm, setEstudianteForm] = useState({
+  const initialEstudianteForm: Omit<Estudiante, "id"> = {
     nombre: "",
     rut: "",
     fechaNacimiento: "",
     correo: "",
-    cursoId: "curso-1",
-    grado: "5°" as const,
-  });
+    cursoId: cursos[0]?.id ?? "curso-1",
+    grado: gradoOptions[0] ?? "5°",
+  };
+
+  const [estudianteForm, setEstudianteForm] = useState<Omit<Estudiante, "id">>(initialEstudianteForm);
   const [estudianteErrors, setEstudianteErrors] = useState<FormErrors>({});
+  const [showEditEstudiante, setShowEditEstudiante] = useState(false);
+  const [editEstudianteId, setEditEstudianteId] = useState<string | null>(null);
+  const [editEstudianteForm, setEditEstudianteForm] = useState<Omit<Estudiante, "id">>(initialEstudianteForm);
+  const [editEstudianteErrors, setEditEstudianteErrors] = useState<FormErrors>({});
 
   const [expandedCursos, setExpandedCursos] = useState<Set<string>>(new Set());
   
@@ -125,42 +131,42 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
     return `${nombreNormalizado}@laurarobles.cl`;
   };
 
-  const validateEstudiante = (): boolean => {
+  const validateEstudianteForm = (form: typeof estudianteForm): FormErrors => {
     const errors: FormErrors = {};
 
-    if (!estudianteForm.nombre.trim()) {
+    if (!form.nombre.trim()) {
       errors.nombre = "El nombre del estudiante es requerido.";
     }
 
-    if (!estudianteForm.rut.trim()) {
+    if (!form.rut.trim()) {
       errors.rut = "El RUT es requerido.";
-    } else if (!validateRut(estudianteForm.rut)) {
+    } else if (!validateRut(form.rut)) {
       errors.rut = "El RUT debe cumplir el formato 12.345.678-9.";
     }
 
-    if (!estudianteForm.fechaNacimiento) {
+    if (!form.fechaNacimiento) {
       errors.fechaNacimiento = "La fecha de nacimiento es requerida.";
     }
 
-    if (!estudianteForm.correo.trim()) {
+    if (!form.correo.trim()) {
       errors.correo = "El correo es requerido.";
-    } else if (!validateEmail(estudianteForm.correo)) {
+    } else if (!validateEmail(form.correo)) {
       errors.correo = "El correo debe incluir el símbolo @.";
     }
 
-    if (!estudianteForm.cursoId) {
+    if (!form.cursoId) {
       errors.curso = "El curso es requerido.";
     }
 
-    setEstudianteErrors(errors);
-    return Object.keys(errors).length === 0;
+    return errors;
   };
 
   const handleAddEstudiante = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!validateEstudiante()) return;
-
-    const nuevoEstudiante = getNewEstudiante({
+    const errors = validateEstudianteForm(estudianteForm);
+    setEstudianteErrors(errors);
+    if (Object.keys(errors).length === 0) {
+      const nuevoEstudiante = getNewEstudiante({
       nombre: estudianteForm.nombre,
       rut: estudianteForm.rut,
       fechaNacimiento: estudianteForm.fechaNacimiento,
@@ -169,16 +175,55 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
       cursoId: estudianteForm.cursoId,
     });
 
-    setEstudiantes([...estudiantes, nuevoEstudiante]);
-    setShowAddEstudiante(false);
-    setEstudianteForm({
-      nombre: "",
-      rut: "",
-      fechaNacimiento: "",
-      correo: "",
-      cursoId: "curso-1",
-      grado: "5°",
+      setEstudiantes([...estudiantes, nuevoEstudiante]);
+      setShowAddEstudiante(false);
+      setEstudianteForm(initialEstudianteForm);
+    }
+  };
+
+  const openEditEstudiante = (estudiante: Estudiante) => {
+    setEditEstudianteId(estudiante.id);
+    setEditEstudianteForm({
+      nombre: estudiante.nombre,
+      rut: estudiante.rut,
+      fechaNacimiento: estudiante.fechaNacimiento,
+      correo: estudiante.correo,
+      cursoId: estudiante.cursoId,
+      grado: estudiante.grado,
     });
+    setEditEstudianteErrors({});
+    setShowEditEstudiante(true);
+  };
+
+  const closeEditEstudiante = () => {
+    setShowEditEstudiante(false);
+    setEditEstudianteId(null);
+    setEditEstudianteErrors({});
+  };
+
+  const handleUpdateEstudiante = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const errors = validateEstudianteForm(editEstudianteForm);
+    setEditEstudianteErrors(errors);
+    if (Object.keys(errors).length === 0 && editEstudianteId) {
+      setEstudiantes((current) =>
+        current.map((estudiante) =>
+          estudiante.id === editEstudianteId
+            ? {
+                ...estudiante,
+                nombre: editEstudianteForm.nombre,
+                rut: editEstudianteForm.rut,
+                fechaNacimiento: editEstudianteForm.fechaNacimiento,
+                correo: editEstudianteForm.correo,
+                cursoId: editEstudianteForm.cursoId,
+                grado: editEstudianteForm.grado,
+              }
+            : estudiante
+        )
+      );
+      closeEditEstudiante();
+    }
   };
 
   
@@ -356,6 +401,12 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
 
                             <div className={styles.estudianteActions}>
                               <button
+                                className={styles.actionButton}
+                                onClick={() => openEditEstudiante(estudiante)}
+                              >
+                                Editar
+                              </button>
+                              <button
                                 className={styles.dangerButton}
                                 onClick={() => deleteEstudiante(estudiante.id)}
                               >
@@ -373,6 +424,116 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
           );
         })}
       </div>
+
+      {showEditEstudiante && (
+        <div className={styles.modalOverlay} onClick={closeEditEstudiante}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>Editar Alumno</h3>
+            <form onSubmit={handleUpdateEstudiante} className={styles.form}>
+              <div className={styles.formGroup}>
+                <label>Nombre *</label>
+                <input
+                  type="text"
+                  value={editEstudianteForm.nombre}
+                  onChange={(e) => {
+                    const nuevo = e.target.value;
+                    if (/^[a-záéíóúñA-ZÁÉÍÓÚÑ\s]*$/.test(nuevo) || nuevo === "") {
+                      setEditEstudianteForm((current) => ({ ...current, nombre: nuevo }));
+                      setEditEstudianteErrors((current) => ({ ...current, nombre: "" }));
+                    }
+                  }}
+                  className={styles.input}
+                  placeholder="Ej: Juan Pérez"
+                />
+                {editEstudianteErrors.nombre && <span className={styles.error}>{editEstudianteErrors.nombre}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>RUT * (Formato: 12.345.678-9)</label>
+                <input
+                  type="text"
+                  placeholder="12.345.678-9"
+                  value={editEstudianteForm.rut}
+                  onChange={(e) => {
+                    const rutFormateado = formatRut(e.target.value);
+                    setEditEstudianteForm((current) => ({ ...current, rut: rutFormateado }));
+                    setEditEstudianteErrors((current) => ({ ...current, rut: "" }));
+                  }}
+                  className={styles.input}
+                  maxLength={12}
+                />
+                {editEstudianteErrors.rut && <span className={styles.error}>{editEstudianteErrors.rut}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Fecha de Nacimiento *</label>
+                <input
+                  type="date"
+                  value={editEstudianteForm.fechaNacimiento}
+                  onChange={(e) => {
+                    setEditEstudianteForm((current) => ({ ...current, fechaNacimiento: e.target.value }));
+                    setEditEstudianteErrors((current) => ({ ...current, fechaNacimiento: "" }));
+                  }}
+                  className={styles.input}
+                />
+                {editEstudianteErrors.fechaNacimiento && <span className={styles.error}>{editEstudianteErrors.fechaNacimiento}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Correo *</label>
+                <input
+                  type="email"
+                  value={editEstudianteForm.correo}
+                  readOnly
+                  className={styles.input}
+                  placeholder="correo@laurarobles.cl"
+                />
+                {editEstudianteErrors.correo && <span className={styles.error}>{editEstudianteErrors.correo}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Grado *</label>
+                <select
+                  value={editEstudianteForm.grado}
+                  onChange={(e) => setEditEstudianteForm((current) => ({ ...current, grado: e.target.value as any }))}
+                  className={styles.select}
+                >
+                  {gradoOptions.map((grado) => (
+                    <option key={grado} value={grado}>
+                      {grado}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Curso *</label>
+                <select
+                  value={editEstudianteForm.cursoId}
+                  onChange={(e) => setEditEstudianteForm((current) => ({ ...current, cursoId: e.target.value }))}
+                  className={styles.select}
+                >
+                  {cursos.map((curso) => (
+                    <option key={curso.id} value={curso.id}>
+                      {curso.nombre}
+                    </option>
+                  ))}
+                </select>
+                {editEstudianteErrors.curso && <span className={styles.error}>{editEstudianteErrors.curso}</span>}
+              </div>
+
+              <div className={styles.formActions}>
+                <button type="submit" className={styles.primaryButton}>
+                  Guardar cambios
+                </button>
+                <button type="button" onClick={closeEditEstudiante} className={styles.secondaryButton}>
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
