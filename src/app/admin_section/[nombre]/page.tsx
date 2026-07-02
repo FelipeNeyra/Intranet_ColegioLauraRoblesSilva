@@ -95,6 +95,14 @@ export default function AdminSectionPage() {
   }, [isInitializing, router, user]);
 
   useEffect(() => {
+    if (!isInitializing && user) {
+      if (routeNombre && routeNombre !== user.nombre) {
+        router.replace(`/admin_section/${encodeURIComponent(user.nombre)}`);
+      }
+    }
+  }, [isInitializing, user, routeNombre, router]);
+
+  useEffect(() => {
     seedInitialAdminData();
     setCursos(getCursosFromStorage());
     setDocentes(getDocentesFromStorage());
@@ -356,7 +364,12 @@ export default function AdminSectionPage() {
     return null;
   }
 
-  const displayedName = routeNombre || user.nombre;
+  // Evitar renderizado si el parámetro de ruta no coincide con el usuario autenticado
+  if (routeNombre && user && routeNombre !== user.nombre) {
+    return null;
+  }
+
+  const displayedName = user.nombre;
 
   return (
     <div className={styles.page}>

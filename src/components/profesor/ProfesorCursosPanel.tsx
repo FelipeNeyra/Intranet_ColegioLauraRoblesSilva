@@ -233,12 +233,24 @@ export function ProfesorCursosPanel({ profesorId }: { profesorId: string }) {
                                       max="7"
                                       step="0.1"
                                       value={calificacionForm.calificacion}
-                                      onChange={(e) =>
+                                      onKeyDown={(e) => {
+                                        if (e.key === "e" || e.key === "E" || e.key === "+" || e.key === "-") {
+                                          e.preventDefault();
+                                        }
+                                      }}
+                                      onPaste={(e) => {
+                                        const text = e.clipboardData.getData("text");
+                                        if (/e/i.test(text)) e.preventDefault();
+                                      }}
+                                      onChange={(e) => {
+                                        const raw = e.target.value;
+                                        if (/e/i.test(raw)) return;
+                                        const parsed = raw === "" ? NaN : parseFloat(raw.replace(",", "."));
                                         setCalificacionForm({
                                           ...calificacionForm,
-                                          calificacion: parseFloat(e.target.value),
-                                        })
-                                      }
+                                          calificacion: isNaN(parsed) ? calificacionForm.calificacion : parsed,
+                                        });
+                                      }}
                                       className={styles.input}
                                     />
                                   </div>

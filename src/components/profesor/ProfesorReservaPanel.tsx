@@ -157,6 +157,11 @@ export function ProfesorReservaPanel({
       return;
     }
 
+    if (!/^\d+$/.test(personas.trim())) {
+      setStatusMessage("Ingrese una cantidad válida de personas.");
+      return;
+    }
+
     if (selectedSlot && isDateTimePast(selectedSlot.fecha, selectedSlot.hora)) {
       setStatusMessage("No se puede reservar un horario que ya pasó.");
       return;
@@ -369,9 +374,17 @@ export function ProfesorReservaPanel({
             <div className={styles.formRow}>
               <input
                 type="text"
+                inputMode="numeric"
                 placeholder="Cantidad de personas"
                 value={personas}
-                onChange={(e) => setPersonas(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (/^\d*$/.test(v)) setPersonas(v);
+                }}
+                onPaste={(e) => {
+                  const text = e.clipboardData.getData("text");
+                  if (!/^\d+$/.test(text)) e.preventDefault();
+                }}
                 className={styles.input}
               />
             </div>

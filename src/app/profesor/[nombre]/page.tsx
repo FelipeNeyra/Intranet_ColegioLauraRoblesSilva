@@ -45,6 +45,14 @@ export default function ProfesorPage() {
   }, [isInitializing, user, router]);
 
   useEffect(() => {
+    if (!isInitializing && user) {
+      if (routeNombre && routeNombre !== user.nombre) {
+        router.replace(`/profesor/${encodeURIComponent(user.nombre)}`);
+      }
+    }
+  }, [isInitializing, user, routeNombre, router]);
+
+  useEffect(() => {
     setReservas(getReservaSalaFromStorage());
     setBloqueos(getHorarioBloqueadoFromStorage());
     setIsLoaded(true);
@@ -80,7 +88,12 @@ export default function ProfesorPage() {
     );
   }
 
-  const displayName = routeNombre || user.nombre;
+  // Evitar renderizado si el parámetro de ruta no coincide con el usuario autenticado
+  if (routeNombre && user && routeNombre !== user.nombre) {
+    return null;
+  }
+
+  const displayName = user.nombre;
 
   const reservasUsuario = useMemo(
     () => reservas.filter((r) => r.correo === user.email),
