@@ -5,6 +5,25 @@ import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 import { AuthContext } from "../../context/AuthContext";
 
+function mapFirebaseError(errorCode: unknown) {
+  if (typeof errorCode !== "string") {
+    return "No se pudo iniciar sesión. Intenta nuevamente.";
+  }
+
+  switch (errorCode) {
+    case "auth/user-not-found":
+      return "Usuario no encontrado.";
+    case "auth/wrong-password":
+      return "Contraseña incorrecta.";
+    case "auth/invalid-email":
+      return "Correo electrónico inválido.";
+    case "auth/user-disabled":
+      return "La cuenta está deshabilitada.";
+    default:
+      return "Error de Firebase: no se pudo iniciar sesión.";
+  }
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { user, login } = useContext(AuthContext);
@@ -25,37 +44,20 @@ export default function LoginPage() {
     }
   }, [user, router]);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!email.trim() || !password.trim()) {
       setError("Por favor, completa todos los campos.");
       return;
     }
 
-    const loginResult = login(email.trim(), password.trim());
+    const loginResult = await login(email.trim(), password.trim());
     if (!loginResult.success) {
-      setError(loginResult.error ?? "No se pudo iniciar sesión.");
+      setError(mapFirebaseError(loginResult.error));
       return;
     }
 
     setError("");
-    try {
-      // evitar dependencias circulares: obtener usuario desde storage
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { getUsersFromStorage } = require("../../lib/auth");
-      const users = getUsersFromStorage();
-      const u = users.find((x: any) => x.email === email.trim());
-      const encodedName = u?.nombre ? encodeURIComponent(u.nombre) : "";
-      if (u?.rol === "Administrador") {
-        router.replace(`/admin_section/${encodedName}`);
-      } else if (u?.rol === "Profesor") {
-        router.replace(`/profesor/${encodedName}`);
-      } else {
-        router.replace("/loading");
-      }
-    } catch (e) {
-      router.replace("/loading");
-    }
   };
 
   return (

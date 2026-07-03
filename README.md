@@ -37,3 +37,16 @@ Permite el establecimiento de notas y citas de apoderados a los alumnos pertenec
 al curso que tiene asignado. Se implementa, de igual forma, un panel de reservas para 
 sala de computación el cuál permite hacer solicitudes de reservas para un horario y dias
 establecidos.
+
+## Configuración de Firebase
+
+Este proyecto usa Firebase para autenticación, base de datos y seguridad (Firestore). Las credenciales 
+se almacena en un archivo local `.env.local` mediante variables de entorno.
+No se suben al repositorio al estar el archivo `.env.local` ignorado por Git mediante `.gitignore`.
+
+Proceso de Obtención de Credenciales:
+1. Copiar las variables de `.env.example` a `.env.local`.
+2. Rellenar las variables con los valores del proyecto en la consola de Firebase (https://console.firebase.google.com/)
+3. `src/firebase/config.js` carga estas variables para inicializar Firebase.
+
+El archivo `.env.example` contiene solo los nombres de las variables y valores de ejemplo. 

@@ -1,0 +1,123 @@
+Informática y Telecomunicaciones
+Analista Programador — Ingeniería en Informática
+EVALUACIÓN SUMATIVA 4
+Programación FrontEnd  —  25%
+Nombre		RUT	
+Carrera(s)		Semestre	Otoño 2026
+Código asignatura	TI2031	Sección	
+Docente		Fecha	
+
+Puntaje Total	46 Pts	Puntaje Obtenido		Nota		Firma
+
+INSTRUCCIONES
+📌	Esta evaluación se desarrolla sobre el mismo repositorio de la Evaluación Sumativa 3. Debes corregir las observaciones del docente y migrar la persistencia de datos de localStorage a Firebase (Firestore + Authentication). La nota 4,0 se obtiene con el 60% del puntaje total (28 pts).
+
+1.  Descripción General
+La Evaluación Sumativa 4 evalúa tu capacidad de iterar y mejorar un proyecto existente. Trabajarás sobre la intranet de la ES3 con dos focos:
+
+Foco 1	Corrección de las observaciones entregadas por el docente en la retroalimentación de la ES3.
+Foco 2	Migración de localStorage a Firebase: autenticación real con Firebase Auth y base de datos en Firestore.
+
+📌	El tiempo de esta evaluación es acotado (una semana) porque el alcance está delimitado: no se agregan nuevas funcionalidades, solo se corrige y se migra. Organiza tu tiempo en consecuencia.
+
+2.  Repositorio GitHub (mismo de la ES3)
+Debes continuar trabajando en el mismo repositorio de la Evaluación Sumativa 3. No crees un repositorio nuevo.
+
+✔	Los commits de corrección y migración deben estar claramente identificados con mensajes descriptivos (ej: 'fix: corrección filtro módulo agenda según retroalimentación', 'feat: migración auth a Firebase').
+✔	El archivo .env.example (sin datos reales) debe estar en el repositorio para que el docente sepa qué variables de entorno configurar.
+✔	El README debe actualizarse con las instrucciones de configuración de Firebase (qué variables se necesitan, cómo obtenerlas).
+✗	NO se acepta un único commit con todos los cambios juntos. Las correcciones y la migración deben evidenciarse como commits separados y significativos.
+✗	NO deben subirse las credenciales reales de Firebase al repositorio. Deben estar en .env y este archivo debe estar en .gitignore.
+
+3.  Correcciones de la ES3
+El docente entregará retroalimentación escrita sobre la ES3 con los criterios que deben ser corregidos. Tu responsabilidad es:
+- Leer atentamente cada observación del docente.
+- Implementar la corrección antes de la demostración de esta evaluación.
+- Estar preparado para explicar qué cambiaste y por qué durante la demostración en vivo.
+
+⚠️	Los criterios que en la ES3 fueron calificados como 'No Logrado' o 'Medianamente Logrado' serán revisados nuevamente en la ES4. Una corrección bien implementada mejora el puntaje de esos criterios.
+
+4.  Migración a Firebase
+4.1  Configuración segura del proyecto
+Las credenciales de Firebase deben almacenarse en variables de entorno (.env) y no deben subirse al repositorio (.gitignore). El repositorio debe incluir un archivo .env.example con los nombres de las variables (sin valores reales) y el README debe explicar cómo obtenerlas desde la consola de Firebase.
+
+4.2  Firebase Authentication
+El login simulado de la ES3 debe reemplazarse por Firebase Authentication. Requisitos mínimos:
+- Inicio de sesión con email y contraseña usando Firebase Auth.
+- El objeto de usuario de Firebase (auth.currentUser) debe exponerse mediante el AuthContext existente, usando onAuthStateChanged para mantener la sesión.
+- El cierre de sesión debe usar signOut(auth) de Firebase.
+- Las rutas protegidas deben validar la sesión usando el estado de Firebase Auth, no localStorage.
+- Los errores de Firebase (contraseña incorrecta, usuario no encontrado, etc.) deben mostrarse al usuario de forma comprensible.
+
+4.3  Firestore como base de datos
+Todos los datos que en la ES3 se almacenaban en localStorage deben migrar a Firestore:
+- Lectura: getDocs o onSnapshot desde Firestore.
+- Escritura: addDoc o setDoc.
+- Edición: updateDoc.
+- Eliminación: deleteDoc.
+- La UI debe mostrar un estado de carga mientras espera la respuesta de Firestore.
+
+4.4  Reglas de seguridad de Firestore
+Las reglas de seguridad de Firestore deben estar configuradas para que los datos solo sean accesibles por usuarios autenticados. No se acepta dejar las reglas abiertas (allow read, write: if true).
+
+// Regla mínima esperada:
+match /databases/{database}/documents {
+  match /{document=**} {
+    allow read, write: if request.auth != null;
+  }
+}
+
+💡	Se valorará positivamente si implementas reglas más granulares (ej: solo el propietario puede modificar sus propios documentos). Esto puede compensar puntos en otros criterios.
+
+5.  Demostración en Vivo (Ejecución Práctica)
+Al igual que en la ES3, el estudiante clonará el repositorio en el equipo del docente y demostrará el funcionamiento. La demostración tiene un peso de 10 puntos sobre el total. En esta evaluación se pondrá especial atención en:
+- Inicio de sesión real con Firebase Auth (se verificará en la consola de Firebase).
+- Operaciones CRUD que persistan en Firestore (se verificará en la consola en tiempo real).
+- Que las reglas de Firestore efectivamente bloqueen el acceso no autenticado.
+- Las correcciones de la ES3 implementadas y justificadas.
+- El historial de commits del repositorio (avance progresivo, mensajes descriptivos).
+
+📋	Por cada pregunta que no puedas responder correctamente durante la demostración se descontarán 5 puntos de la nota final. Si el docente determina que no hay comprensión ni autoría del trabajo, la evaluación será calificada con nota mínima (1,0).
+
+6.  ¿Qué Debes Entregar?
+N°	Entregable	Descripción
+1	Repositorio GitHub (mismo de ES3)	Mismo repositorio de la ES3, con los commits de corrección y migración a Firebase. Incluye .env.example y README actualizado.
+2	Demostración en vivo	Clonación y ejecución del proyecto con Firebase activo. El historial de commits será revisado en esta instancia.
+3	Hoja de entrega	Bloc de notas con la URL del repositorio.
+
+7.  Instrumento de Evaluación — Escala de Apreciación
+Los criterios técnicos (OA 4.1 a OA 4.3) se evalúan en escala 3/2/1. Los criterios de Demostración de Autoría se evalúan en escala 5/3/1, con un peso total de 10 puntos.
+
+Logrado (3 pts)	Med. Logrado (2 pts)	No Logrado (1 pt)	Referencia
+El criterio está completamente cumplido.	Se cumple parcialmente.	No se cumple o no se evidencia.	Nota 4,0 = 60% del puntaje total.
+
+Logrado (5 pts)	Med. Logrado (3 pts)	No Logrado (1 pt)	Solo para criterios de Demostración
+Demuestra dominio completo y autoría clara.	Demuestra comprensión parcial o con apoyo.	No puede responder o realizar los cambios.	Estos criterios valen 5/3/1 pts (no 3/2/1).
+
+Criterio de Evaluación	Logrado (3 pts)	Med. Logrado (2 pts)	No Logrado (1 pt)	Pts
+OA 4.1 — Correcciones de la Evaluación Sumativa 3
+Corrección de criterios observados	Todos los criterios marcados como 'No Logrado' o 'Med. Logrado' en la ES3 fueron corregidos correctamente. El estudiante puede explicar qué cambió y por qué.	La mayoría de las observaciones fueron corregidas pero quedan errores menores o el estudiante no puede justificar todos los cambios.	Las observaciones de la ES3 no fueron corregidas o los cambios realizados no resuelven el problema señalado.	
+Commits de corrección identificables	El historial de commits muestra claramente cuáles cambios corresponden a correcciones, con mensajes descriptivos y commits separados por corrección.	Existen commits de corrección pero los mensajes son genéricos o las correcciones están mezcladas con otros cambios.	No se evidencian commits de corrección; todos los cambios están en un solo commit o no están diferenciados.	
+OA 4.2 — Firebase Authentication
+Configuración segura de Firebase	Las credenciales están en .env, no están en el repositorio (.gitignore), existe .env.example y el README documenta cómo configurarlas.	Las credenciales están parcialmente protegidas (algunas en .env, otras hardcodeadas) o el README no documenta la configuración.	Las credenciales de Firebase están directamente en el código fuente del repositorio público.	
+Login y sesión con Firebase Auth	El inicio de sesión usa Firebase Authentication con email/contraseña. onAuthStateChanged gestiona el estado de sesión. Los errores de Firebase se muestran de forma comprensible al usuario.	La autenticación funciona pero no se usa onAuthStateChanged o los errores de Firebase no se gestionan correctamente.	La autenticación no usa Firebase Auth o no funciona correctamente.	
+AuthContext actualizado con Firebase	El AuthContext usa onAuthStateChanged de Firebase para gestionar la sesión. Las rutas protegidas validan la sesión de Firebase, no localStorage.	El AuthContext tiene partes de localStorage mezcladas con Firebase Auth, generando inconsistencias.	El AuthContext no fue actualizado; sigue usando localStorage para simular la sesión.	
+Cierre de sesión con Firebase	El logout usa signOut(auth) de Firebase, limpia el contexto global y redirige al login correctamente.	El logout usa Firebase pero no limpia completamente el contexto o no redirige correctamente.	El logout no usa Firebase o no funciona.	
+OA 4.3 — Integración con Firestore y seguridad
+Lectura de datos desde Firestore	Los listados se obtienen desde Firestore usando getDocs o onSnapshot. La UI muestra estado de carga mientras espera la respuesta.	Los datos se leen desde Firestore pero no se maneja el estado de carga o hay datos mezclados con localStorage.	Los datos siguen leyéndose desde localStorage; Firestore no está integrado en la lectura.	
+Escritura, edición y eliminación en Firestore	Las operaciones CRUD (addDoc/setDoc, updateDoc, deleteDoc) funcionan correctamente en Firestore y se reflejan en la UI.	Algunas operaciones CRUD funcionan en Firestore pero otras aún usan localStorage o fallan silenciosamente.	Las operaciones de escritura/edición/eliminación no usan Firestore.	
+Reglas de seguridad de Firestore	Las reglas permiten acceso solo a usuarios autenticados (request.auth != null) como mínimo. Se puede demostrar en vivo que un usuario no autenticado no accede.	Las reglas están configuradas pero permiten algún acceso no autenticado o no se pueden demostrar.	Las reglas están abiertas (allow read, write: if true) o no están configuradas.	
+Estado de carga y manejo de errores async	Las operaciones asíncronas con Firestore muestran estado de carga en la UI y capturan errores con try/catch, mostrando mensaje al usuario si falla.	Se muestra estado de carga o se capturan errores, pero no ambos, o la gestión es inconsistente.	No hay indicadores de carga ni manejo de errores en las operaciones con Firestore.	
+OA 4.4 — Control de versiones ES4
+Commits descriptivos de migración y corrección	El historial del repositorio muestra commits separados e identificables para correcciones y para la migración a Firebase, con mensajes que describen claramente cada avance.	Existen commits de migración pero los mensajes son genéricos o los cambios están agrupados sin distinción entre corrección y migración.	Todos los cambios están en uno o dos commits masivos sin distinción de tipo ni avance progresivo.	
+PUNTAJE TOTAL	/ 36
+
+Criterio de Evaluación	Logrado (5 pts)	Med. Logrado (3 pts)	No Logrado (1 pt)	Pts
+Demostración de Autoría (Ejecución Práctica) — 10 puntos
+Conocimiento del código propio y de Firebase	Responde correctamente preguntas sobre Firebase Auth, Firestore, las reglas de seguridad y las correcciones realizadas. Puede explicar cada decisión técnica.	Responde parte de las preguntas. Entiende el flujo general pero tiene dificultades con detalles de Firebase, reglas o correcciones específicas.	No puede responder preguntas básicas sobre Firebase o sobre las correcciones realizadas.	
+Capacidad de modificar el código en vivo	Realiza los cambios solicitados correcta e independientemente (ej: agregar un campo a Firestore, mostrar dato del usuario autenticado en otro componente).	Intenta los cambios pero comete errores o necesita orientación para completarlos.	No puede realizar los cambios solicitados o no comprende qué se le pide.	
+PUNTAJE TOTAL	/ 10
+
+⚠️	RECUERDA: Por cada pregunta no respondida durante la demostración se descuentan 5 puntos. Si el docente determina que no hay comprensión ni autoría del trabajo, la nota puede ser 1,0.
+Puntaje total del instrumento: 36 pts (criterios técnicos) + 10 pts (demostración) = 46 pts. Nota 4,0 = 28 pts (60%).
+URL Repositorio GitHub (ES3)	
