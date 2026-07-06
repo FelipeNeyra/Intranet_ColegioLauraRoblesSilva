@@ -30,6 +30,7 @@ import {
   validateRut,
   formatRut,
 } from "../../../lib/adminData";
+import ConfirmDialog from "../../../components/common/ConfirmDialog";
 import { addUserAccount, deleteUserByEmail, generateUserId, getUserByEmail, updateUserByEmail } from "../../../lib/auth";
 
 const sections = ["Cursos", "Docentes", "Sala de Computación"] as const;
@@ -313,6 +314,19 @@ export default function AdminSectionPage() {
     } catch (error) {
       console.error("Error eliminando docente en Firestore:", error);
     }
+  };
+
+  // Confirmation dialog state for admin page
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTitle, setConfirmTitle] = useState<string | undefined>(undefined);
+  const [confirmMessage, setConfirmMessage] = useState<string | undefined>(undefined);
+  const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
+
+  const requestConfirm = (title: string, message: string, action: () => void) => {
+    setConfirmTitle(title);
+    setConfirmMessage(message);
+    setConfirmAction(() => action);
+    setConfirmOpen(true);
   };
 
   const handleAssignCurso = async (docenteId: string, cursoId: string) => {
@@ -720,7 +734,13 @@ export default function AdminSectionPage() {
                         <button
                           type="button"
                           className={styles.deleteButton}
-                          onClick={() => handleDeleteDocente(docente.id)}
+                          onClick={() =>
+                            requestConfirm(
+                              "Eliminar docente",
+                              `¿Deseas eliminar al docente ${docente.nombre}? Se eliminará su cuenta de usuario.`,
+                              () => handleDeleteDocente(docente.id)
+                            )
+                          }
                         >
                           Eliminar
                         </button>
@@ -848,6 +868,20 @@ export default function AdminSectionPage() {
       <footer className={styles.footer}>
         <p>Intranet - Colegio Laura Robles Silva - Sección Administrador</p>
       </footer>
+      <ConfirmDialog
+        open={confirmOpen}
+        title={confirmTitle}
+        message={confirmMessage}
+        onConfirm={() => {
+          try {
+            confirmAction?.();
+          } finally {
+            setConfirmOpen(false);
+            setConfirmAction(null);
+          }
+        }}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }

@@ -18,6 +18,7 @@ import {
   saveHorarioBloqueadoToStorage,
   saveReservaSalaToStorage,
 } from "../../lib/adminData";
+import ConfirmDialog from "../common/ConfirmDialog";
 
 //Horas disponibles dentro del Calendario
 const timeSlots = [
@@ -190,10 +191,16 @@ export function SalaComputacionPanel() {
 
     //Verificar que el bloqueo no este registrado
     if (bloqueado) {
-      setBloqueos((current) => current.filter((item) => item.id !== bloqueado.id));
-      void deleteHorarioBloqueadoFromFirestore(bloqueado.id).catch((error) => {
-        console.error("Error eliminando bloqueo de Firestore:", error);
-      });
+      requestConfirm(
+        "Eliminar bloqueo",
+        `¿Deseas eliminar el bloqueo en ${fecha} · ${hora}?`,
+        () => {
+          setBloqueos((current) => current.filter((item) => item.id !== bloqueado.id));
+          void deleteHorarioBloqueadoFromFirestore(bloqueado.id).catch((error) => {
+            console.error("Error eliminando bloqueo de Firestore:", error);
+          });
+        }
+      );
       return;
     }
 
@@ -233,6 +240,19 @@ export function SalaComputacionPanel() {
     void deleteReservaSalaFromFirestore(id).catch((error) => {
       console.error("Error eliminando reserva de Firestore:", error);
     });
+  };
+
+  // Confirmation dialog state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTitle, setConfirmTitle] = useState<string | undefined>(undefined);
+  const [confirmMessage, setConfirmMessage] = useState<string | undefined>(undefined);
+  const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
+
+  const requestConfirm = (title: string, message: string, action: () => void) => {
+    setConfirmTitle(title);
+    setConfirmMessage(message);
+    setConfirmAction(() => action);
+    setConfirmOpen(true);
   };
 
   //Función para registrar un bloqueo de forma manual
@@ -460,7 +480,13 @@ export function SalaComputacionPanel() {
               <button
                 type="button"
                 className={styles.deleteButton}
-                onClick={() => eliminarBloqueo(bloqueo.id)}
+                onClick={() =>
+                  requestConfirm(
+                    "Eliminar bloqueo",
+                    `¿Deseas eliminar el bloqueo en ${bloqueo.fecha} · ${bloqueo.hora}?`,
+                    () => eliminarBloqueo(bloqueo.id)
+                  )
+                }
               >
                 Eliminar
               </button>
@@ -530,7 +556,13 @@ export function SalaComputacionPanel() {
                 <button
                   type="button"
                   className={styles.deleteButton}
-                  onClick={() => eliminarReserva(reserva.id)}
+                  onClick={() =>
+                    requestConfirm(
+                      "Eliminar reserva",
+                      `¿Deseas eliminar la reserva de ${reserva.nombre} ${reserva.apellido} (${reserva.curso})?`,
+                      () => eliminarReserva(reserva.id)
+                    )
+                  }
                 >
                   Eliminar
                 </button>
@@ -539,6 +571,20 @@ export function SalaComputacionPanel() {
           ))}
         </div>
       </div>
+      <ConfirmDialog
+        open={confirmOpen}
+        title={confirmTitle}
+        message={confirmMessage}
+        onConfirm={() => {
+          try {
+            confirmAction?.();
+          } finally {
+            setConfirmOpen(false);
+            setConfirmAction(null);
+          }
+        }}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </section>
   );
 }

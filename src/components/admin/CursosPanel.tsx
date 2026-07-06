@@ -18,6 +18,7 @@ import {
   updateEstudianteInFirestore,
   deleteEstudianteFromFirestore,
 } from "../../lib/adminData";
+import ConfirmDialog from "../common/ConfirmDialog";
 
 interface FormErrors {
   nombre?: string;
@@ -267,6 +268,19 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange, onDeleteCurso 
     }
   };
 
+  // Confirmation dialog state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTitle, setConfirmTitle] = useState<string | undefined>(undefined);
+  const [confirmMessage, setConfirmMessage] = useState<string | undefined>(undefined);
+  const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
+
+  const requestConfirm = (title: string, message: string, action: () => void) => {
+    setConfirmTitle(title);
+    setConfirmMessage(message);
+    setConfirmAction(() => action);
+    setConfirmOpen(true);
+  };
+
   return (
     <section className={styles.panel}>
       <div className={styles.headerRow}>
@@ -407,7 +421,13 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange, onDeleteCurso 
                 <button
                   type="button"
                   className={styles.dangerButton}
-                  onClick={() => onDeleteCurso?.(curso.id)}
+                  onClick={() =>
+                    requestConfirm(
+                      "Eliminar curso",
+                      `¿Deseas eliminar el curso \"${curso.nombre}\"? Se eliminará la referencia en docentes.`,
+                      () => onDeleteCurso?.(curso.id)
+                    )
+                  }
                 >
                   Eliminar curso
                 </button>
@@ -438,7 +458,13 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange, onDeleteCurso 
                               </button>
                               <button
                                 className={styles.dangerButton}
-                                onClick={() => deleteEstudiante(estudiante.id)}
+                                onClick={() =>
+                                  requestConfirm(
+                                    "Eliminar alumno",
+                                    `¿Deseas eliminar al alumno \"${estudiante.nombre}\"? Esta acción no se puede deshacer.`,
+                                    () => void deleteEstudiante(estudiante.id)
+                                  )
+                                }
                               >
                                 Eliminar
                               </button>
@@ -468,7 +494,8 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange, onDeleteCurso 
                   onChange={(e) => {
                     const nuevo = e.target.value;
                     if (/^[a-záéíóúñA-ZÁÉÍÓÚÑ\s]*$/.test(nuevo) || nuevo === "") {
-                      setEditEstudianteForm((current) => ({ ...current, nombre: nuevo }));
+                      const correoAutomatico = generateEmail(nuevo);
+                      setEditEstudianteForm((current) => ({ ...current, nombre: nuevo, correo: correoAutomatico }));
                       setEditEstudianteErrors((current) => ({ ...current, nombre: "" }));
                     }
                   }}
@@ -564,6 +591,21 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange, onDeleteCurso 
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={confirmOpen}
+        title={confirmTitle}
+        message={confirmMessage}
+        onConfirm={() => {
+          try {
+            confirmAction?.();
+          } finally {
+            setConfirmOpen(false);
+            setConfirmAction(null);
+          }
+        }}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </section>
   );
 }
+
