@@ -29,24 +29,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const auth = await getFirebaseAuth();
         console.info("[browser] AuthContext got Firebase Auth instance");
-        unsub = onAuthStateChanged(auth, (firebaseUser) => {
-          (async () => {
-            if (firebaseUser?.email) {
-              const storedUser = await getUserByEmailAsync(firebaseUser.email);
+        unsub = onAuthStateChanged(auth, async () => {
+          const currentUser = auth.currentUser;
+          if (currentUser?.email) {
+            const storedUser = await getUserByEmailAsync(currentUser.email);
 
-              setUser({
-                id: firebaseUser.uid,
-                nombre: storedUser?.nombre ?? firebaseUser.displayName ?? firebaseUser.email,
-                email: firebaseUser.email,
-                password: "",
-                rol: storedUser?.rol ?? "Profesor",
-              });
-            } else {
-              setUser(null);
-            }
+            setUser({
+              id: currentUser.uid,
+              nombre: storedUser?.nombre ?? currentUser.displayName ?? currentUser.email,
+              email: currentUser.email,
+              password: "",
+              rol: storedUser?.rol ?? "Profesor",
+            });
+          } else {
+            setUser(null);
+          }
 
-            setIsInitializing(false);
-          })();
+          setIsInitializing(false);
         });
       } catch (e) {
         console.error("[browser] AuthContext initialization failed", e);

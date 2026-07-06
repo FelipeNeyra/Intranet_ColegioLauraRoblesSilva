@@ -10,7 +10,8 @@ function mapFirebaseError(errorCode: unknown) {
     return `No se pudo iniciar sesión. (${String(errorCode)})`;
   }
 
-  switch (errorCode) {
+  const normalized = errorCode.toLowerCase();
+  switch (normalized) {
     case "auth/user-not-found":
       return "Usuario no encontrado.";
     case "auth/wrong-password":
@@ -19,6 +20,10 @@ function mapFirebaseError(errorCode: unknown) {
       return "Correo electrónico inválido.";
     case "auth/user-disabled":
       return "La cuenta está deshabilitada.";
+    case "auth/invalid-credential":
+    case "invalid_login_credentials":
+    case "invalid login credentials":
+      return "Usuario o contraseña incorrectos.";
     default:
       return `Error de Firebase: ${errorCode}`;
   }

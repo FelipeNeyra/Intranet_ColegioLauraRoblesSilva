@@ -70,9 +70,51 @@ export interface HorarioBloqueado {
   motivo: string;
 }
 
+import { collection, doc, query, getDocs, onSnapshot, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { getFirebaseFirestore } from "../firebase/config";
+
+const ESTUDIANTES_COLLECTION = "estudiantes";
+
+async function getFirestoreInstance() {
+  return getFirebaseFirestore();
+}
+
+export async function getEstudiantesFromFirestore(): Promise<Estudiante[]> {
+  const db = await getFirestoreInstance();
+  const q = query(collection(db, ESTUDIANTES_COLLECTION));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as Omit<Estudiante, "id">) }));
+}
+
+export async function listenToEstudiantes(callback: (estudiantes: Estudiante[]) => void): Promise<() => void> {
+  const db = await getFirestoreInstance();
+  const q = query(collection(db, ESTUDIANTES_COLLECTION));
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const estudiantes = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as Omit<Estudiante, "id">) }));
+    callback(estudiantes);
+  });
+  return unsubscribe;
+}
+
+export async function addEstudianteToFirestore(estudiante: Omit<Estudiante, "id">): Promise<Estudiante> {
+  const db = await getFirestoreInstance();
+  const docRef = doc(collection(db, ESTUDIANTES_COLLECTION));
+  await setDoc(docRef, estudiante);
+  return { id: docRef.id, ...estudiante };
+}
+
+export async function updateEstudianteInFirestore(id: string, updates: Partial<Omit<Estudiante, "id">>): Promise<void> {
+  const db = await getFirestoreInstance();
+  await updateDoc(doc(db, ESTUDIANTES_COLLECTION, id), updates);
+}
+
+export async function deleteEstudianteFromFirestore(id: string): Promise<void> {
+  const db = await getFirestoreInstance();
+  await deleteDoc(doc(db, ESTUDIANTES_COLLECTION, id));
+}
+
 //Instancias de Arrays en localStorage
 const CURSOS_STORAGE_KEY = "intranet_cursos";
-const ESTUDIANTES_STORAGE_KEY = "intranet_estudiantes";
 const DOCENTES_STORAGE_KEY = "intranet_docentes";
 const RESERVAS_SALA_STORAGE_KEY = "intranet_reservas_sala";
 const HORARIOS_BLOQUEADOS_STORAGE_KEY = "intranet_horarios_bloqueados";
@@ -111,9 +153,6 @@ const setStorageValue = <T>(key: string, value: T): void => {
 export const getCursosFromStorage = (): Curso[] =>
   getStorageValue<Curso[]>(CURSOS_STORAGE_KEY, []);
 
-export const getEstudiantesFromStorage = (): Estudiante[] =>
-  getStorageValue<Estudiante[]>(ESTUDIANTES_STORAGE_KEY, []);
-
 export const getDocentesFromStorage = (): Docente[] =>
   getStorageValue<Docente[]>(DOCENTES_STORAGE_KEY, []);
 
@@ -134,9 +173,6 @@ export const getCalificacionesFromStorage = (): Calificacion[] =>
 export const saveCursosToStorage = (cursos: Curso[]): void =>
   setStorageValue(CURSOS_STORAGE_KEY, cursos);
 
-export const saveEstudiantesToStorage = (estudiantes: Estudiante[]): void =>
-  setStorageValue(ESTUDIANTES_STORAGE_KEY, estudiantes);
-
 export const saveDocentesToStorage = (docentes: Docente[]): void =>
   setStorageValue(DOCENTES_STORAGE_KEY, docentes);
 
@@ -153,7 +189,7 @@ export const saveCalificacionesStorage = (calificaciones: Calificacion[]): void 
   setStorageValue(CALIFICACIONES_STORAGE_KEY, calificaciones);
 
 //Función para registrar datos iniciales
-//Estos datos (Cursos, Estudiantes y Docentes) se registran al momento de iniciar sesión por primera vez
+//Estos datos (Cursos y Docentes) se registran al momento de iniciar sesión por primera vez
 export const seedInitialAdminData = (): void => {
   if (typeof window === "undefined") {
     return;
@@ -161,7 +197,6 @@ export const seedInitialAdminData = (): void => {
 
   //Obtener instancias de Arrays de localStorage
   const hasCursos = window.localStorage.getItem(CURSOS_STORAGE_KEY);
-  const hasEstudiantes = window.localStorage.getItem(ESTUDIANTES_STORAGE_KEY);
   const hasDocentes = window.localStorage.getItem(DOCENTES_STORAGE_KEY);
   const hasReservasSala = window.localStorage.getItem(RESERVAS_SALA_STORAGE_KEY);
   const hasHorariosBloqueados = window.localStorage.getItem(HORARIOS_BLOQUEADOS_STORAGE_KEY);
@@ -172,36 +207,6 @@ export const seedInitialAdminData = (): void => {
       { id: "curso-1", nombre: "1° Básico A", profesorId: "doc-1" },
       { id: "curso-2", nombre: "2° Básico B", profesorId: "doc-2" },
       { id: "curso-3", nombre: "3° Básico C", profesorId: "doc-3" },
-    ]);
-  }
-
-  //Registro inicial de Estudiantes
-  if (!hasEstudiantes) {
-    saveEstudiantesToStorage([
-      // Curso 1°A (7 estudiantes)
-      { id: "est-1", nombre: "Ana María González", grado: "5°", rut: "12.345.678-9", fechaNacimiento: "2010-05-15", correo: "ana.gonzalez@laurarobles.cl", cursoId: "curso-1" },
-      { id: "est-2", nombre: "Carlos Rodríguez", grado: "5°", rut: "13.456.789-0", fechaNacimiento: "2010-08-22", correo: "carlos.rodriguez@laurarobles.cl", cursoId: "curso-1" },
-      { id: "est-3", nombre: "María López", grado: "5°", rut: "14.567.890-1", fechaNacimiento: "2010-11-10", correo: "maria.lopez@laurarobles.cl", cursoId: "curso-1" },
-      { id: "est-4", nombre: "Diego Muñoz", grado: "5°", rut: "15.678.901-2", fechaNacimiento: "2010-03-20", correo: "diego.munoz@laurarobles.cl", cursoId: "curso-1" },
-      { id: "est-13", nombre: "Valentina Soto", grado: "5°", rut: "24.567.890-1", fechaNacimiento: "2010-09-30", correo: "valentina.soto@laurarobles.cl", cursoId: "curso-1" },
-      { id: "est-14", nombre: "Andrés Vega", grado: "5°", rut: "25.678.901-2", fechaNacimiento: "2010-12-12", correo: "andres.vega@laurarobles.cl", cursoId: "curso-1" },
-      { id: "est-15", nombre: "Francisca Guzmán", grado: "5°", rut: "26.789.012-3", fechaNacimiento: "2010-04-18", correo: "francisca.guzman@laurarobles.cl", cursoId: "curso-1" },
-      // Curso 2°B (7 estudiantes)
-      { id: "est-5", nombre: "Sofía García", grado: "6°", rut: "16.789.012-3", fechaNacimiento: "2009-07-14", correo: "sofia.garcia@laurarobles.cl", cursoId: "curso-2" },
-      { id: "est-6", nombre: "Pablo Soto", grado: "6°", rut: "17.890.123-4", fechaNacimiento: "2009-01-25", correo: "pablo.soto@laurarobles.cl", cursoId: "curso-2" },
-      { id: "est-7", nombre: "Catalina Flores", grado: "6°", rut: "18.901.234-5", fechaNacimiento: "2009-09-08", correo: "catalina.flores@laurarobles.cl", cursoId: "curso-2" },
-      { id: "est-8", nombre: "Javier Torres", grado: "6°", rut: "19.012.345-6", fechaNacimiento: "2009-12-16", correo: "javier.torres@laurarobles.cl", cursoId: "curso-2" },
-      { id: "est-16", nombre: "Marcela Reyes", grado: "6°", rut: "27.890.123-4", fechaNacimiento: "2009-06-22", correo: "marcela.reyes@laurarobles.cl", cursoId: "curso-2" },
-      { id: "est-17", nombre: "Ignacio Molina", grado: "6°", rut: "28.901.234-5", fechaNacimiento: "2009-11-05", correo: "ignacio.molina@laurarobles.cl", cursoId: "curso-2" },
-      { id: "est-18", nombre: "Constanza Ríos", grado: "6°", rut: "29.012.345-6", fechaNacimiento: "2009-08-17", correo: "constanza.rios@laurarobles.cl", cursoId: "curso-2" },
-      // Curso3°C (7 estudiantes)
-      { id: "est-9", nombre: "Javiera Morales", grado: "7°", rut: "20.123.456-7", fechaNacimiento: "2008-04-11", correo: "javiera.morales@laurarobles.cl", cursoId: "curso-3" },
-      { id: "est-10", nombre: "Roberto Díaz", grado: "7°", rut: "21.234.567-8", fechaNacimiento: "2008-06-28", correo: "roberto.diaz@laurarobles.cl", cursoId: "curso-3" },
-      { id: "est-11", nombre: "Claudia Herrera", grado: "7°", rut: "22.345.678-9", fechaNacimiento: "2008-10-05", correo: "claudia.herrera@laurarobles.cl", cursoId: "curso-3" },
-      { id: "est-12", nombre: "Felipe Ramírez", grado: "7°", rut: "23.456.789-0", fechaNacimiento: "2008-02-19", correo: "felipe.ramirez@laurarobles.cl", cursoId: "curso-3" },
-      { id: "est-19", nombre: "Lorena Castillo", grado: "7°", rut: "30.123.456-7", fechaNacimiento: "2008-03-14", correo: "lorena.castillo@laurarobles.cl", cursoId: "curso-3" },
-      { id: "est-20", nombre: "Rodrigo Fernández", grado: "7°", rut: "31.234.567-8", fechaNacimiento: "2008-07-26", correo: "rodrigo.fernandez@laurarobles.cl", cursoId: "curso-3" },
-      { id: "est-21", nombre: "Viviana Ortega", grado: "7°", rut: "32.345.678-9", fechaNacimiento: "2008-09-09", correo: "viviana.ortega@laurarobles.cl", cursoId: "curso-3" },
     ]);
   }
 

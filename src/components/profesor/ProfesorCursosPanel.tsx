@@ -8,13 +8,13 @@ import {
   Calificacion,
   Cita,
   getCursosFromStorage,
-  getEstudiantesFromStorage,
   getCalificacionesFromStorage,
   getCitasFromStorage,
   saveCalificacionesStorage,
   saveCitasToStorage,
   getNewCalificacion,
   getNewCita,
+  listenToEstudiantes,
 } from "../../lib/adminData";
 
 interface CalificacionForm {
@@ -53,11 +53,21 @@ export function ProfesorCursosPanel({ profesorId }: { profesorId: string }) {
   });
 
   useEffect(() => {
+    let unsubscribe: (() => void) | null = null;
     setCursos(getCursosFromStorage());
-    setEstudiantes(getEstudiantesFromStorage());
     setCalificaciones(getCalificacionesFromStorage());
     setCitas(getCitasFromStorage());
-    setIsLoaded(true);
+
+    (async () => {
+      unsubscribe = await listenToEstudiantes((data) => {
+        setEstudiantes(data);
+        setIsLoaded(true);
+      });
+    })();
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   useEffect(() => {

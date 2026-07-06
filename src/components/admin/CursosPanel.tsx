@@ -6,16 +6,17 @@ import {
   Curso,
   Estudiante,
   getCursosFromStorage,
-  getEstudiantesFromStorage,
   saveCursosToStorage,
-  saveEstudiantesToStorage,
   getNewEstudiante,
-
   validateEmail,
   validateRut,
   formatRut,
   gradoOptions,
   seedInitialAdminData,
+  listenToEstudiantes,
+  addEstudianteToFirestore,
+  updateEstudianteInFirestore,
+  deleteEstudianteFromFirestore,
 } from "../../lib/adminData";
 
 interface FormErrors {
@@ -81,17 +82,24 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
   };
 
   useEffect(() => {
+    let unsubscribe: (() => void) | null = null;
+
     seedInitialAdminData();
     const cursosData = getCursosFromStorage();
-    const estudiantesData = getEstudiantesFromStorage();
-    
-
     if (!cursosProp) {
       setInternalCursos(cursosData);
     }
-    setEstudiantes(estudiantesData);
-    
-    setIsLoaded(true);
+
+    (async () => {
+      unsubscribe = await listenToEstudiantes((data) => {
+        setEstudiantes(data);
+        setIsLoaded(true);
+      });
+    })();
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, [cursosProp]);
 
   // Expandir todos los cursos cuando cambien
@@ -103,8 +111,7 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
   useEffect(() => {
     if (!isLoaded) return;
     saveCursosToStorage(cursos);
-    saveEstudiantesToStorage(estudiantes);
-  }, [cursos, estudiantes, isLoaded]);
+  }, [cursos, isLoaded]);
 
   const generateEmail = (nombre: string): string => {
     if (!nombre.trim()) return "";
@@ -161,21 +168,33 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
     return errors;
   };
 
-  const handleAddEstudiante = (e: FormEvent<HTMLFormElement>) => {
+  const handleAddEstudiante = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const errors = validateEstudianteForm(estudianteForm);
     setEstudianteErrors(errors);
     if (Object.keys(errors).length === 0) {
       const nuevoEstudiante = getNewEstudiante({
-      nombre: estudianteForm.nombre,
-      rut: estudianteForm.rut,
-      fechaNacimiento: estudianteForm.fechaNacimiento,
-      correo: estudianteForm.correo,
-      grado: estudianteForm.grado,
-      cursoId: estudianteForm.cursoId,
-    });
+        nombre: estudianteForm.nombre,
+        rut: estudianteForm.rut,
+        fechaNacimiento: estudianteForm.fechaNacimiento,
+        correo: estudianteForm.correo,
+        grado: estudianteForm.grado,
+        cursoId: estudianteForm.cursoId,
+      });
 
-      setEstudiantes([...estudiantes, nuevoEstudiante]);
+      try {
+        await addEstudianteToFirestore({
+          nombre: nuevoEstudiante.nombre,
+          rut: nuevoEstudiante.rut,
+          fechaNacimiento: nuevoEstudiante.fechaNacimiento,
+          correo: nuevoEstudiante.correo,
+          grado: nuevoEstudiante.grado,
+          cursoId: nuevoEstudiante.cursoId,
+        });
+      } catch (error) {
+        console.error("Error adding estudiante to Firestore:", error);
+      }
+
       setShowAddEstudiante(false);
       setEstudianteForm(initialEstudianteForm);
     }
@@ -201,27 +220,24 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
     setEditEstudianteErrors({});
   };
 
-  const handleUpdateEstudiante = (e: FormEvent<HTMLFormElement>) => {
+  const handleUpdateEstudiante = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const errors = validateEstudianteForm(editEstudianteForm);
     setEditEstudianteErrors(errors);
     if (Object.keys(errors).length === 0 && editEstudianteId) {
-      setEstudiantes((current) =>
-        current.map((estudiante) =>
-          estudiante.id === editEstudianteId
-            ? {
-                ...estudiante,
-                nombre: editEstudianteForm.nombre,
-                rut: editEstudianteForm.rut,
-                fechaNacimiento: editEstudianteForm.fechaNacimiento,
-                correo: editEstudianteForm.correo,
-                cursoId: editEstudianteForm.cursoId,
-                grado: editEstudianteForm.grado,
-              }
-            : estudiante
-        )
-      );
+      try {
+        await updateEstudianteInFirestore(editEstudianteId, {
+          nombre: editEstudianteForm.nombre,
+          rut: editEstudianteForm.rut,
+          fechaNacimiento: editEstudianteForm.fechaNacimiento,
+          correo: editEstudianteForm.correo,
+          cursoId: editEstudianteForm.cursoId,
+          grado: editEstudianteForm.grado,
+        });
+      } catch (error) {
+        console.error("Error updating estudiante in Firestore:", error);
+      }
       closeEditEstudiante();
     }
   };
@@ -242,8 +258,12 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
 
   
 
-  const deleteEstudiante = (estudianteId: string) => {
-    setEstudiantes((current) => current.filter((e) => e.id !== estudianteId));
+  const deleteEstudiante = async (estudianteId: string) => {
+    try {
+      await deleteEstudianteFromFirestore(estudianteId);
+    } catch (error) {
+      console.error("Error deleting estudiante from Firestore:", error);
+    }
   };
 
   return (
