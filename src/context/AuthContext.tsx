@@ -1,11 +1,9 @@
 "use client";
 
 import { createContext, useEffect, useState, type ReactNode } from "react";
-import firebase_app from "../firebase/config";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { getUserByEmail, type User } from "../lib/auth";
-
-const auth = getAuth(firebase_app);
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from "firebase/auth";
+import { getFirebaseAuth } from "../firebase/config";
+import { getUserByEmailAsync, type User } from "../lib/auth";
 
 interface AuthContextType {
   user: User | null;
@@ -26,38 +24,82 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isInitializing, setIsInitializing] = useState<boolean>(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser?.email) {
-        const storedUser = getUserByEmail(firebaseUser.email);
+    let unsub: (() => void) | null = null;
+    (async () => {
+      try {
+        const auth = await getFirebaseAuth();
+        console.info("[browser] AuthContext got Firebase Auth instance");
+        unsub = onAuthStateChanged(auth, (firebaseUser) => {
+          (async () => {
+            if (firebaseUser?.email) {
+              const storedUser = await getUserByEmailAsync(firebaseUser.email);
 
-        setUser({
-          id: firebaseUser.uid,
-          nombre: storedUser?.nombre ?? firebaseUser.displayName ?? firebaseUser.email,
-          email: firebaseUser.email,
-          password: "",
-          rol: storedUser?.rol ?? "Profesor",
+              setUser({
+                id: firebaseUser.uid,
+                nombre: storedUser?.nombre ?? firebaseUser.displayName ?? firebaseUser.email,
+                email: firebaseUser.email,
+                password: "",
+                rol: storedUser?.rol ?? "Profesor",
+              });
+            } else {
+              setUser(null);
+            }
+
+            setIsInitializing(false);
+          })();
         });
-      } else {
-        setUser(null);
+      } catch (e) {
+        console.error("[browser] AuthContext initialization failed", e);
+        setIsInitializing(false);
       }
+    })();
 
-      setIsInitializing(false);
-    });
-
-    return unsubscribe;
+    return () => {
+      if (unsub) unsub();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
+      const auth = await getFirebaseAuth();
       await signInWithEmailAndPassword(auth, email, password);
+      console.info('[browser] Firebase signInWithEmailAndPassword succeeded for', email);
       return { success: true };
     } catch (e) {
-      return { success: false, error: (e as { code?: string }).code ?? "auth/error" };
+      const err = e as any;
+      const code = err?.code ?? err?.message ?? "auth/error";
+      console.error("Firebase login error:", code, err?.message ?? err);
+
+      const shouldTryAutoProvision =
+        code === "auth/user-not-found" ||
+        code === "auth/invalid-credential" ||
+        (typeof code === "string" && code.toUpperCase().includes("INVALID_LOGIN_CREDENTIALS"));
+
+      if (shouldTryAutoProvision) {
+        try {
+          const stored = await getUserByEmailAsync(email);
+          if (stored && stored.password === password) {
+            try {
+              const auth = await getFirebaseAuth();
+              await createUserWithEmailAndPassword(auth, email, stored.password);
+              await signInWithEmailAndPassword(auth, email, stored.password);
+              return { success: true };
+            } catch (e2) {
+              console.error("Auto-provisioning createUser error:", e2);
+            }
+          }
+        } catch (e3) {
+          console.error("Error fetching user from Firestore during auto-provision:", e3);
+        }
+      }
+
+      return { success: false, error: code };
     }
   };
 
   const logout = async () => {
     try {
+      const auth = await getFirebaseAuth();
       await signOut(auth);
     } catch {
       // ignore logout errors

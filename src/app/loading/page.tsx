@@ -7,7 +7,7 @@ import { AuthContext } from "../../context/AuthContext";
 
 function mapFirebaseError(errorCode: unknown) {
   if (typeof errorCode !== "string") {
-    return "No se pudo iniciar sesión. Intenta nuevamente.";
+    return `No se pudo iniciar sesión. (${String(errorCode)})`;
   }
 
   switch (errorCode) {
@@ -20,7 +20,7 @@ function mapFirebaseError(errorCode: unknown) {
     case "auth/user-disabled":
       return "La cuenta está deshabilitada.";
     default:
-      return "Error de Firebase: no se pudo iniciar sesión.";
+      return `Error de Firebase: ${errorCode}`;
   }
 }
 

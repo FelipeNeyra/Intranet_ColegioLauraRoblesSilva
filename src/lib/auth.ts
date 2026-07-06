@@ -12,6 +12,14 @@ export interface User {
 //Instancia de localStorage en donde se guardaran los usuarios
 export const USERS_STORAGE_KEY = "intranet_usuarios";
 
+// Firestore integration (async helpers)
+import { getFirebaseFirestore } from "../firebase/config";
+import { collection, query, where, getDocs } from "firebase/firestore";
+
+async function getFirestoreInstance() {
+  return getFirebaseFirestore();
+}
+
 //Usuarios que se registran al primer momento de abrir la página
 export const initialAdminUsers: User[] = [
   {
@@ -104,6 +112,34 @@ export const generateGenericProfessorPassword = (): string => "profe123456";
 export const getUserByEmail = (email: string): User | undefined => {
   const users = getUsersFromStorage();
   return users.find((u) => u.email === email);
+};
+
+// Async version that queries Firestore `usuarios` collection
+export const getUserByEmailAsync = async (email: string): Promise<User | undefined> => {
+  if (typeof window === "undefined") return undefined;
+
+  try {
+    const db = await getFirestoreInstance();
+    const q = query(collection(db, "usuarios"), where("email", "==", email));
+    const snap = await getDocs(q);
+    if (snap.empty) return undefined;
+
+    const doc = snap.docs[0];
+    const data = doc.data() as any;
+
+    const user: User = {
+      id: doc.id,
+      nombre: data.nombre ?? data.displayName ?? data.email,
+      email: data.email,
+      password: (data.password as string) ?? "",
+      rol: (data.rol as User["rol"]) ?? "Profesor",
+    };
+
+    return user;
+  } catch (e) {
+    console.error("[lib/auth] getUserByEmailAsync error", e);
+    return undefined;
+  }
 };
 
 //Función para registrar un nuevo usuario
