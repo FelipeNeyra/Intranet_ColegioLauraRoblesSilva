@@ -10,8 +10,11 @@ import {
   ReservaSala,
   HorarioBloqueado,
   getReservaSalaFromStorage,
+  getReservaSalaFromFirestore,
+  addReservaSalaToFirestore,
   saveReservaSalaToStorage,
   getHorarioBloqueadoFromStorage,
+  getHorarioBloqueadoFromFirestore,
 } from "../../../lib/adminData";
 
 const sections = ["Mis Cursos", "Reserva de Salas"] as const;
@@ -53,9 +56,24 @@ export default function ProfesorPage() {
   }, [isInitializing, user, routeNombre, router]);
 
   useEffect(() => {
-    setReservas(getReservaSalaFromStorage());
-    setBloqueos(getHorarioBloqueadoFromStorage());
-    setIsLoaded(true);
+    const loadData = async () => {
+      try {
+        const [reservasFromFirestore, bloqueosFromFirestore] = await Promise.all([
+          getReservaSalaFromFirestore(),
+          getHorarioBloqueadoFromFirestore(),
+        ]);
+        setReservas(reservasFromFirestore);
+        setBloqueos(bloqueosFromFirestore);
+      } catch (error) {
+        console.error("Error cargando reservas/bloqueos desde Firestore:", error);
+        setReservas(getReservaSalaFromStorage());
+        setBloqueos(getHorarioBloqueadoFromStorage());
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+
+    void loadData();
   }, []);
 
   useEffect(() => {
@@ -63,14 +81,13 @@ export default function ProfesorPage() {
     saveReservaSalaToStorage(reservas);
   }, [reservas, isLoaded]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setReservas(getReservaSalaFromStorage());
-      setBloqueos(getHorarioBloqueadoFromStorage());
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, []);
+  const reservasUsuario = useMemo(
+    () => (user ? reservas.filter((r) => r.correo === user.email) : []),
+    [reservas, user?.email]
+  );
+  const aprobadas = reservasUsuario.filter((r) => r.estado === "Aprobada").length;
+  const rechazadas = reservasUsuario.filter((r) => r.estado === "Rechazada").length;
+  const solicitudesConRespuesta = aprobadas + rechazadas;
 
   if (isInitializing) {
     return (
@@ -94,14 +111,6 @@ export default function ProfesorPage() {
   }
 
   const displayName = user.nombre;
-
-  const reservasUsuario = useMemo(
-    () => reservas.filter((r) => r.correo === user.email),
-    [reservas, user.email]
-  );
-  const aprobadas = reservasUsuario.filter((r) => r.estado === "Aprobada").length;
-  const rechazadas = reservasUsuario.filter((r) => r.estado === "Rechazada").length;
-  const solicitudesConRespuesta = aprobadas + rechazadas;
 
   return (
     <div className={styles.page}>
@@ -128,8 +137,8 @@ export default function ProfesorPage() {
           <button
             type="button"
             className={`${styles.navLink} ${styles.logoutLink}`}
-            onClick={() => {
-              logout();
+            onClick={async () => {
+              await logout();
               router.replace("/loading");
             }}
           >
@@ -149,30 +158,17 @@ export default function ProfesorPage() {
               profesorId={user?.id || ""}
               reservas={reservas}
               bloqueos={bloqueos}
-              onReservaCreada={(reserva) => {
+              onReservaCreada={async (reserva) => {
                 const updated = [...reservas, reserva];
                 setReservas(updated);
+                try {
+                  await addReservaSalaToFirestore(reserva);
+                } catch (error) {
+                  console.error("Error guardando reserva en Firestore:", error);
+                }
               }}
             />
-
-            <div style={{ marginTop: "2rem" }}>
-              <h3 style={{ color: "var(--color-rojo)", marginBottom: "1rem" }}>Mis solicitudes</h3>
-              {solicitudesConRespuesta > 0 && (
-                <div
-                  style={{
-                    marginBottom: "1rem",
-                    padding: "0.9rem 1rem",
-                    borderRadius: "10px",
-                    background: aprobadas > 0 ? "#ecfdf3" : "#fff7ed",
-                    color: aprobadas > 0 ? "#166534" : "#9a5b00",
-                    fontWeight: 600,
-                  }}
-                  role="status"
-                >
-                  {aprobadas > 0 && <div>✅ {aprobadas} solicitud(es) aprobada(s).</div>}
-                  {rechazadas > 0 && <div>❌ {rechazadas} solicitud(es) rechazada(s).</div>}
-                </div>
-              )}
+            <div className={styles.reservationSummary}>
               {reservasUsuario.length === 0 ? (
                 <p style={{ color: "var(--texto-secundario)" }}>No hay reservas solicitadas.</p>
               ) : (

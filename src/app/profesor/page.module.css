@@ -130,6 +130,10 @@
   gap: 1rem;
 }
 
+.reservationSummary {
+  margin-top: 1.5rem;
+}
+
 .listItem {
   display: flex;
   flex-direction: column;

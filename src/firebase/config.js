@@ -15,24 +15,16 @@ function _serverConfigFromEnv() {
     };
 }
 
-async function _clientConfigFromApi() {
-    try {
-        const res = await fetch("/api/env");
-        if (!res.ok) return null;
-        const env = await res.json();
-        return {
-            apiKey: env.NEXT_PUBLIC_FIREBASE_API_KEY ?? null,
-            authDomain: env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ?? null,
-            projectId: env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? null,
-            storageBucket: env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ?? null,
-            messagingSenderId: env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? null,
-            appId: env.NEXT_PUBLIC_FIREBASE_APP_ID ?? null,
-            measurementId: env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID ?? null,
-        };
-    } catch (e) {
-        console.error("[firebase/config] client config fetch failed", e);
-        return null;
-    }
+function _clientConfigFromEnv() {
+    return {
+        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ?? null,
+        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ?? null,
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ?? null,
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ?? null,
+        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ?? null,
+        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ?? null,
+        measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID ?? null,
+    };
 }
 
 function _validateConfig(config) {
@@ -53,7 +45,7 @@ function _validateConfig(config) {
 export async function getFirebaseApp() {
     if (getApps().length > 0) return getApps()[0];
 
-    const config = typeof window === "undefined" ? _serverConfigFromEnv() : await _clientConfigFromApi();
+    const config = typeof window === "undefined" ? _serverConfigFromEnv() : _clientConfigFromEnv();
     _validateConfig(config);
 
     const app = initializeApp({

@@ -32,9 +32,10 @@ interface FormErrors {
 interface CursosPanelProps {
   cursos?: Curso[];
   onCursosChange?: (cursos: Curso[]) => void;
+  onDeleteCurso?: (cursoId: string) => void;
 }
 
-export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelProps) {
+export function CursosPanel({ cursos: cursosProp, onCursosChange, onDeleteCurso }: CursosPanelProps) {
   const [internalCursos, setInternalCursos] = useState<Curso[]>([]);
   const cursos = cursosProp ?? internalCursos;
   const [estudiantes, setEstudiantes] = useState<Estudiante[]>([]);
@@ -397,11 +398,20 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange }: CursosPanelP
 
           return (
             <div key={curso.id} className={styles.cursoCard}>
-              <button className={styles.cursoHeader} onClick={() => toggleCurso(curso.id)}>
-                <h3>{curso.nombre}</h3>
-                <span className={styles.badge}>{estudiantosCurso.length} alumnos</span>
-                <span className={styles.toggle}>{isExpanded ? "▼" : "▶"}</span>
-              </button>
+              <div className={styles.cursoHeader}>
+                <button type="button" className={styles.cursoToggleButton} onClick={() => toggleCurso(curso.id)}>
+                  <h3>{curso.nombre}</h3>
+                  <span className={styles.badge}>{estudiantosCurso.length} alumnos</span>
+                  <span className={styles.toggle}>{isExpanded ? "▼" : "▶"}</span>
+                </button>
+                <button
+                  type="button"
+                  className={styles.dangerButton}
+                  onClick={() => onDeleteCurso?.(curso.id)}
+                >
+                  Eliminar curso
+                </button>
+              </div>
 
               {isExpanded && (
                 <div className={styles.cursoContent}>

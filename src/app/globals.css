@@ -31,6 +31,19 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+input,
+textarea,
+select {
+  background-color: #ffffff;
+  color: #111827;
+}
+
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  color: #64748b;
+}
+
 * {
   box-sizing: border-box;
   padding: 0;

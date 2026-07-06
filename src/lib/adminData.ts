@@ -74,6 +74,10 @@ import { collection, doc, query, getDocs, onSnapshot, setDoc, updateDoc, deleteD
 import { getFirebaseFirestore } from "../firebase/config";
 
 const ESTUDIANTES_COLLECTION = "estudiantes";
+const CURSOS_COLLECTION = "cursos";
+const DOCENTES_COLLECTION = "docentes";
+const RESERVAS_SALA_COLLECTION = "reservas_sala";
+const HORARIOS_BLOQUEADOS_COLLECTION = "horarios_bloqueados";
 
 async function getFirestoreInstance() {
   return getFirebaseFirestore();
@@ -111,6 +115,104 @@ export async function updateEstudianteInFirestore(id: string, updates: Partial<O
 export async function deleteEstudianteFromFirestore(id: string): Promise<void> {
   const db = await getFirestoreInstance();
   await deleteDoc(doc(db, ESTUDIANTES_COLLECTION, id));
+}
+
+export async function getCursosFromFirestore(): Promise<Curso[]> {
+  const db = await getFirestoreInstance();
+  const q = query(collection(db, CURSOS_COLLECTION));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as Omit<Curso, "id">) }));
+}
+
+export async function addCursoToFirestore(curso: Curso): Promise<void> {
+  const db = await getFirestoreInstance();
+  await setDoc(doc(db, CURSOS_COLLECTION, curso.id), {
+    nombre: curso.nombre,
+    profesorId: curso.profesorId,
+  });
+}
+
+export async function updateCursoInFirestore(id: string, updates: Partial<Omit<Curso, "id">>): Promise<void> {
+  const db = await getFirestoreInstance();
+  await updateDoc(doc(db, CURSOS_COLLECTION, id), updates);
+}
+
+export async function deleteCursoFromFirestore(id: string): Promise<void> {
+  const db = await getFirestoreInstance();
+  await deleteDoc(doc(db, CURSOS_COLLECTION, id));
+}
+
+export async function getDocentesFromFirestore(): Promise<Docente[]> {
+  const db = await getFirestoreInstance();
+  const q = query(collection(db, DOCENTES_COLLECTION));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as Omit<Docente, "id">) }));
+}
+
+export async function addDocenteToFirestore(docente: Docente): Promise<void> {
+  const db = await getFirestoreInstance();
+  await setDoc(doc(db, DOCENTES_COLLECTION, docente.id), {
+    nombre: docente.nombre,
+    rut: docente.rut,
+    fechaNacimiento: docente.fechaNacimiento,
+    correo: docente.correo,
+    cursoId: docente.cursoId ?? null,
+    asignaturas: docente.asignaturas ?? [],
+  });
+}
+
+export async function updateDocenteInFirestore(id: string, updates: Partial<Omit<Docente, "id">>): Promise<void> {
+  const db = await getFirestoreInstance();
+  await updateDoc(doc(db, DOCENTES_COLLECTION, id), updates);
+}
+
+export async function deleteDocenteFromFirestore(id: string): Promise<void> {
+  const db = await getFirestoreInstance();
+  await deleteDoc(doc(db, DOCENTES_COLLECTION, id));
+}
+
+export async function getReservaSalaFromFirestore(): Promise<ReservaSala[]> {
+  const db = await getFirestoreInstance();
+  const q = query(collection(db, RESERVAS_SALA_COLLECTION));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as Omit<ReservaSala, "id">) }));
+}
+
+export async function addReservaSalaToFirestore(reserva: ReservaSala): Promise<void> {
+  const db = await getFirestoreInstance();
+  await setDoc(doc(db, RESERVAS_SALA_COLLECTION, reserva.id), reserva);
+}
+
+export async function updateReservaSalaInFirestore(id: string, updates: Partial<Omit<ReservaSala, "id">>): Promise<void> {
+  const db = await getFirestoreInstance();
+  await updateDoc(doc(db, RESERVAS_SALA_COLLECTION, id), updates);
+}
+
+export async function deleteReservaSalaFromFirestore(id: string): Promise<void> {
+  const db = await getFirestoreInstance();
+  await deleteDoc(doc(db, RESERVAS_SALA_COLLECTION, id));
+}
+
+export async function getHorarioBloqueadoFromFirestore(): Promise<HorarioBloqueado[]> {
+  const db = await getFirestoreInstance();
+  const q = query(collection(db, HORARIOS_BLOQUEADOS_COLLECTION));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as Omit<HorarioBloqueado, "id">) }));
+}
+
+export async function addHorarioBloqueadoToFirestore(bloqueo: HorarioBloqueado): Promise<void> {
+  const db = await getFirestoreInstance();
+  await setDoc(doc(db, HORARIOS_BLOQUEADOS_COLLECTION, bloqueo.id), bloqueo);
+}
+
+export async function updateHorarioBloqueadoInFirestore(id: string, updates: Partial<Omit<HorarioBloqueado, "id">>): Promise<void> {
+  const db = await getFirestoreInstance();
+  await updateDoc(doc(db, HORARIOS_BLOQUEADOS_COLLECTION, id), updates);
+}
+
+export async function deleteHorarioBloqueadoFromFirestore(id: string): Promise<void> {
+  const db = await getFirestoreInstance();
+  await deleteDoc(doc(db, HORARIOS_BLOQUEADOS_COLLECTION, id));
 }
 
 //Instancias de Arrays en localStorage

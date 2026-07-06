@@ -5,8 +5,15 @@ import styles from "./SalaComputacionPanel.module.css";
 import {
   HorarioBloqueado,
   ReservaSala,
+  getHorarioBloqueadoFromFirestore,
+  getReservaSalaFromFirestore,
   getHorarioBloqueadoFromStorage,
   getReservaSalaFromStorage,
+  addHorarioBloqueadoToFirestore,
+  addReservaSalaToFirestore,
+  updateReservaSalaInFirestore,
+  deleteHorarioBloqueadoFromFirestore,
+  deleteReservaSalaFromFirestore,
   getNewHorarioBloqueado,
   saveHorarioBloqueadoToStorage,
   saveReservaSalaToStorage,
@@ -102,14 +109,29 @@ export function SalaComputacionPanel() {
   const currentTime = getCurrentTime();
   const [isLoaded, setIsLoaded] = useState(false);
 
-  //Carga inicial de datos en localStorage
+  //Carga inicial de datos desde Firestore y fallback a localStorage
   useEffect(() => {
-    setReservas(getReservaSalaFromStorage());
-    setBloqueos(getHorarioBloqueadoFromStorage());
-    setIsLoaded(true);
+    const loadData = async () => {
+      try {
+        const [reservasFromFirestore, bloqueosFromFirestore] = await Promise.all([
+          getReservaSalaFromFirestore(),
+          getHorarioBloqueadoFromFirestore(),
+        ]);
+        setReservas(reservasFromFirestore);
+        setBloqueos(bloqueosFromFirestore);
+      } catch (error) {
+        console.error("Error cargando reservas y bloqueos desde Firestore:", error);
+        setReservas(getReservaSalaFromStorage());
+        setBloqueos(getHorarioBloqueadoFromStorage());
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+
+    void loadData();
   }, []);
 
-  // Sincronización en tiempo real cada 2 segundos
+  // Sincronización en tiempo real local para no perder cambios
   useEffect(() => {
     const interval = setInterval(() => {
       setReservas(getReservaSalaFromStorage());
@@ -169,23 +191,30 @@ export function SalaComputacionPanel() {
     //Verificar que el bloqueo no este registrado
     if (bloqueado) {
       setBloqueos((current) => current.filter((item) => item.id !== bloqueado.id));
+      void deleteHorarioBloqueadoFromFirestore(bloqueado.id).catch((error) => {
+        console.error("Error eliminando bloqueo de Firestore:", error);
+      });
       return;
     }
 
-    //Insertar bloqueo
-    setBloqueos((current) => [
-      ...current,
-      getNewHorarioBloqueado({
-        fecha,
-        hora,
-        motivo: "Bloqueado por administración",
-      }),
-    ]);
+    const nuevoBloqueo = getNewHorarioBloqueado({
+      fecha,
+      hora,
+      motivo: "Bloqueado por administración",
+    });
+
+    setBloqueos((current) => [...current, nuevoBloqueo]);
+    void addHorarioBloqueadoToFirestore(nuevoBloqueo).catch((error) => {
+      console.error("Error guardando bloqueo en Firestore:", error);
+    });
   };
 
   //Función para eliminar un bloqueo
   const eliminarBloqueo = (id: string) => {
     setBloqueos((current) => current.filter((item) => item.id !== id));
+    void deleteHorarioBloqueadoFromFirestore(id).catch((error) => {
+      console.error("Error eliminando bloqueo de Firestore:", error);
+    });
   };
 
   //Función para actualizar una reserva
@@ -193,11 +222,17 @@ export function SalaComputacionPanel() {
     setReservas((current) =>
       current.map((reserva) => (reserva.id === id ? { ...reserva, ...updates } : reserva))
     );
+    void updateReservaSalaInFirestore(id, updates).catch((error) => {
+      console.error("Error actualizando reserva en Firestore:", error);
+    });
   };
 
   //Función para eliminar una reserva
   const eliminarReserva = (id: string) => {
     setReservas((current) => current.filter((reserva) => reserva.id !== id));
+    void deleteReservaSalaFromFirestore(id).catch((error) => {
+      console.error("Error eliminando reserva de Firestore:", error);
+    });
   };
 
   //Función para registrar un bloqueo de forma manual

@@ -13,10 +13,18 @@ import {
   letrasCurso,
   getCursosFromStorage,
   getDocentesFromStorage,
+  getCursosFromFirestore,
+  getDocentesFromFirestore,
   getNewDocente,
   getNewCurso,
   saveCursosToStorage,
   saveDocentesToStorage,
+  addCursoToFirestore,
+  addDocenteToFirestore,
+  deleteCursoFromFirestore,
+  deleteDocenteFromFirestore,
+  updateCursoInFirestore,
+  updateDocenteInFirestore,
   seedInitialAdminData,
   validateEmail,
   validateRut,
@@ -107,6 +115,45 @@ export default function AdminSectionPage() {
     setCursos(getCursosFromStorage());
     setDocentes(getDocentesFromStorage());
     setIsLoaded(true);
+
+    const loadFirestoreData = async () => {
+      try {
+        const [cursosFromFirebase, docentesFromFirebase] = await Promise.all([
+          getCursosFromFirestore(),
+          getDocentesFromFirestore(),
+        ]);
+
+        if (cursosFromFirebase.length > 0) {
+          setCursos(cursosFromFirebase);
+        } else {
+          const localCursos = getCursosFromStorage();
+          await Promise.all(localCursos.map(async (curso) => {
+            try {
+              await addCursoToFirestore(curso);
+            } catch (error) {
+              console.error("Error seeding curso to Firestore:", error);
+            }
+          }));
+        }
+
+        if (docentesFromFirebase.length > 0) {
+          setDocentes(docentesFromFirebase);
+        } else {
+          const localDocentes = getDocentesFromStorage();
+          await Promise.all(localDocentes.map(async (docente) => {
+            try {
+              await addDocenteToFirestore(docente);
+            } catch (error) {
+              console.error("Error seeding docente to Firestore:", error);
+            }
+          }));
+        }
+      } catch (error) {
+        console.error("No se pudieron cargar datos desde Firestore:", error);
+      }
+    };
+
+    void loadFirestoreData();
   }, []);
 
   useEffect(() => {
@@ -189,7 +236,7 @@ export default function AdminSectionPage() {
     setEditDocenteErrors({});
   };
 
-  const handleUpdateDocente = (event: FormEvent<HTMLFormElement>) => {
+  const handleUpdateDocente = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!editDocenteId) return;
 
@@ -239,18 +286,36 @@ export default function AdminSectionPage() {
       )
     );
 
+    try {
+      await updateDocenteInFirestore(editDocenteId, {
+        nombre: updatedDocente.nombre,
+        rut: updatedDocente.rut,
+        fechaNacimiento: updatedDocente.fechaNacimiento,
+        correo: updatedDocente.correo,
+        asignaturas: updatedDocente.asignaturas.split(",").map((a) => a.trim()).filter(Boolean),
+      });
+    } catch (error) {
+      console.error("Error actualizando docente en Firestore:", error);
+    }
+
     closeEditDocente();
   };
 
-  const handleDeleteDocente = (id: string) => {
+  const handleDeleteDocente = async (id: string) => {
     const docente = docentes.find((d) => d.id === id);
     if (docente) {
       deleteUserByEmail(docente.correo);
     }
     setDocentes((current) => current.filter((docente) => docente.id !== id));
+
+    try {
+      await deleteDocenteFromFirestore(id);
+    } catch (error) {
+      console.error("Error eliminando docente en Firestore:", error);
+    }
   };
 
-  const handleAssignCurso = (docenteId: string, cursoId: string) => {
+  const handleAssignCurso = async (docenteId: string, cursoId: string) => {
     const docente = docentes.find((d) => d.id === docenteId);
     const oldCursoId = docente?.cursoId;
 
@@ -271,11 +336,21 @@ export default function AdminSectionPage() {
       })
     );
 
+    try {
+      if (oldCursoId) {
+        await updateCursoInFirestore(oldCursoId, { profesorId: "" });
+      }
+      await updateCursoInFirestore(cursoId, { profesorId: docenteId });
+      await updateDocenteInFirestore(docenteId, { cursoId });
+    } catch (error) {
+      console.error("Error actualizando curso/docente en Firestore:", error);
+    }
+
     setShowAssignModal(false);
     setSelectedDocenteId("");
   };
 
-  const handleAddCurso = (e: FormEvent<HTMLFormElement>) => {
+  const handleAddCurso = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!cursoForm.nivel || !cursoForm.letra) {
@@ -290,18 +365,30 @@ export default function AdminSectionPage() {
 
     setCursos((current) => [...current, newCurso]);
     setCursoForm({ nivel: "", letra: "" });
+
+    try {
+      await addCursoToFirestore(newCurso);
+    } catch (error) {
+      console.error("Error guardando curso en Firestore:", error);
+    }
   };
 
-  const handleDeleteCurso = (id: string) => {
+  const handleDeleteCurso = async (id: string) => {
     setCursos((current) => current.filter((curso) => curso.id !== id));
     setDocentes((current) =>
       current.map((docente) =>
         docente.cursoId === id ? { ...docente, cursoId: undefined } : docente
       )
     );
+
+    try {
+      await deleteCursoFromFirestore(id);
+    } catch (error) {
+      console.error("Error eliminando curso en Firestore:", error);
+    }
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (activeSection === "Docentes") {
@@ -334,9 +421,14 @@ export default function AdminSectionPage() {
         } else {
           setLastCreatedAccount({ email: result.user.email, password: result.password });
         }
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error(e);
+      } catch (error) {
+        console.error("Error creando usuario de auth:", error);
+      }
+
+      try {
+        await addDocenteToFirestore(newDocente);
+      } catch (error) {
+        console.error("Error guardando docente en Firestore:", error);
       }
 
       setDocenteForm({
@@ -396,8 +488,8 @@ export default function AdminSectionPage() {
           <button
             type="button"
             className={`${styles.navLink} ${styles.logoutLink}`}
-            onClick={() => {
-              logout();
+            onClick={async () => {
+              await logout();
               router.replace("/loading");
             }}
           >
@@ -444,7 +536,7 @@ export default function AdminSectionPage() {
         <div className={styles.listCard}>
           {activeSection === "Cursos" ? (
             <>
-              <CursosPanel cursos={cursos} onCursosChange={setCursos} />
+              <CursosPanel cursos={cursos} onCursosChange={setCursos} onDeleteCurso={handleDeleteCurso} />
               <div style={{ maxWidth: "1100px", margin: "2rem auto 0" }}>
                 <div style={{ padding: "2rem", background: "white", borderRadius: "24px", boxShadow: "0 24px 60px rgba(15, 23, 42, 0.08)" }}>
                   <h3 style={{ marginBottom: "1.5rem", color: "#db353d", fontFamily: "'League Spartan', sans-serif", fontSize: "1.5rem" }}>Crear Nuevo Curso</h3>

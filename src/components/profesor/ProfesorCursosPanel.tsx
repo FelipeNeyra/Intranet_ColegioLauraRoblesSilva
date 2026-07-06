@@ -7,6 +7,7 @@ import {
   Estudiante,
   Calificacion,
   Cita,
+  getCursosFromFirestore,
   getCursosFromStorage,
   getCalificacionesFromStorage,
   getCitasFromStorage,
@@ -54,11 +55,21 @@ export function ProfesorCursosPanel({ profesorId }: { profesorId: string }) {
 
   useEffect(() => {
     let unsubscribe: (() => void) | null = null;
-    setCursos(getCursosFromStorage());
+    const cursosFromStorage = getCursosFromStorage();
+    setCursos(cursosFromStorage);
     setCalificaciones(getCalificacionesFromStorage());
     setCitas(getCitasFromStorage());
 
     (async () => {
+      try {
+        const cursosFromFirestore = await getCursosFromFirestore();
+        if (cursosFromFirestore.length > 0) {
+          setCursos(cursosFromFirestore);
+        }
+      } catch (error) {
+        console.error("Error cargando cursos desde Firestore:", error);
+      }
+
       unsubscribe = await listenToEstudiantes((data) => {
         setEstudiantes(data);
         setIsLoaded(true);

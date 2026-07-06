@@ -118,6 +118,8 @@
   border-radius: 4px;
   font-size: 14px;
   font-family: inherit;
+  background-color: #ffffff;
+  color: #1f2937;
 }
 
 .input:focus,
@@ -159,26 +161,44 @@
 
 .cursoHeader {
   width: 100%;
-  padding: 16px;
+  padding: 0;
   background: #db353d;
   color: white;
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cursoToggleButton {
+  width: 100%;
+  padding: 16px;
+  background: transparent;
+  color: white;
   border: none;
+  text-align: left;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   font-weight: 500;
-  transition: opacity 0.2s;
 }
 
-.cursoHeader:hover {
+.cursoToggleButton:hover {
   opacity: 0.9;
 }
 
 .cursoHeader h3 {
   margin: 0;
   font-size: 18px;
+}
+
+.cursoActions {
+  padding: 16px;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .badge {
