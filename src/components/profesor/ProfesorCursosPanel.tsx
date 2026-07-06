@@ -8,11 +8,7 @@ import {
   Calificacion,
   Cita,
   getCursosFromFirestore,
-  getCursosFromStorage,
-  getCalificacionesFromStorage,
-  getCitasFromStorage,
-  saveCalificacionesStorage,
-  saveCitasToStorage,
+  
   getNewCalificacion,
   getNewCita,
   listenToEstudiantes,
@@ -62,32 +58,28 @@ export function ProfesorCursosPanel({ profesorId }: { profesorId: string }) {
 
   useEffect(() => {
     let unsubscribe: (() => void) | null = null;
-    const cursosFromStorage = getCursosFromStorage();
-    setCursos(cursosFromStorage);
-    setCalificaciones(getCalificacionesFromStorage());
-    setCitas(getCitasFromStorage());
 
     (async () => {
       try {
         const cursosFromFirestore = await getCursosFromFirestore();
-        if (cursosFromFirestore.length > 0) {
-          setCursos(cursosFromFirestore);
-        }
-        try {
-          const califs = await getCalificacionesFromFirestore();
-          if (califs && califs.length > 0) setCalificaciones(califs);
-        } catch (e) {
-          console.error("Error cargando calificaciones desde Firestore:", e);
-        }
-
-        try {
-          const citasFromFs = await getCitasFromFirestore();
-          if (citasFromFs && citasFromFs.length > 0) setCitas(citasFromFs);
-        } catch (e) {
-          console.error("Error cargando citas desde Firestore:", e);
-        }
+        setCursos(cursosFromFirestore ?? []);
       } catch (error) {
         console.error("Error cargando cursos desde Firestore:", error);
+        setCursos([]);
+      }
+
+      try {
+        const califs = await getCalificacionesFromFirestore();
+        if (califs && califs.length > 0) setCalificaciones(califs);
+      } catch (e) {
+        console.error("Error cargando calificaciones desde Firestore:", e);
+      }
+
+      try {
+        const citasFromFs = await getCitasFromFirestore();
+        if (citasFromFs && citasFromFs.length > 0) setCitas(citasFromFs);
+      } catch (e) {
+        console.error("Error cargando citas desde Firestore:", e);
       }
 
       unsubscribe = await listenToEstudiantes((data) => {
@@ -130,15 +122,7 @@ export function ProfesorCursosPanel({ profesorId }: { profesorId: string }) {
     };
   }, []);
 
-  useEffect(() => {
-    if (!isLoaded) return;
-    saveCalificacionesStorage(calificaciones);
-  }, [calificaciones, isLoaded]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    saveCitasToStorage(citas);
-  }, [citas, isLoaded]);
+  // No localStorage persistence; rely on Firestore listeners
 
   const handleAddCalificacion = async (e: FormEvent<HTMLFormElement>, estudianteId: string) => {
     e.preventDefault();

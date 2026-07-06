@@ -9,11 +9,8 @@ import { ProfesorCursosPanel } from "../../../components/profesor/ProfesorCursos
 import {
   ReservaSala,
   HorarioBloqueado,
-  getReservaSalaFromStorage,
   getReservaSalaFromFirestore,
   addReservaSalaToFirestore,
-  saveReservaSalaToStorage,
-  getHorarioBloqueadoFromStorage,
   getHorarioBloqueadoFromFirestore,
 } from "../../../lib/adminData";
 
@@ -66,8 +63,8 @@ export default function ProfesorPage() {
         setBloqueos(bloqueosFromFirestore);
       } catch (error) {
         console.error("Error cargando reservas/bloqueos desde Firestore:", error);
-        setReservas(getReservaSalaFromStorage());
-        setBloqueos(getHorarioBloqueadoFromStorage());
+        setReservas([]);
+        setBloqueos([]);
       } finally {
         setIsLoaded(true);
       }
@@ -76,10 +73,7 @@ export default function ProfesorPage() {
     void loadData();
   }, []);
 
-  useEffect(() => {
-    if (!isLoaded) return;
-    saveReservaSalaToStorage(reservas);
-  }, [reservas, isLoaded]);
+  // No localStorage persistence — rely on Firestore
 
   const reservasUsuario = useMemo(
     () => (user ? reservas.filter((r) => r.correo === user.email) : []),

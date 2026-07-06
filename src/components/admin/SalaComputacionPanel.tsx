@@ -7,16 +7,12 @@ import {
   ReservaSala,
   getHorarioBloqueadoFromFirestore,
   getReservaSalaFromFirestore,
-  getHorarioBloqueadoFromStorage,
-  getReservaSalaFromStorage,
   addHorarioBloqueadoToFirestore,
   addReservaSalaToFirestore,
   updateReservaSalaInFirestore,
   deleteHorarioBloqueadoFromFirestore,
   deleteReservaSalaFromFirestore,
   getNewHorarioBloqueado,
-  saveHorarioBloqueadoToStorage,
-  saveReservaSalaToStorage,
 } from "../../lib/adminData";
 import ConfirmDialog from "../common/ConfirmDialog";
 
@@ -110,7 +106,7 @@ export function SalaComputacionPanel() {
   const currentTime = getCurrentTime();
   const [isLoaded, setIsLoaded] = useState(false);
 
-  //Carga inicial de datos desde Firestore y fallback a localStorage
+  //Carga inicial de datos desde Firestore
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -122,8 +118,8 @@ export function SalaComputacionPanel() {
         setBloqueos(bloqueosFromFirestore);
       } catch (error) {
         console.error("Error cargando reservas y bloqueos desde Firestore:", error);
-        setReservas(getReservaSalaFromStorage());
-        setBloqueos(getHorarioBloqueadoFromStorage());
+        setReservas([]);
+        setBloqueos([]);
       } finally {
         setIsLoaded(true);
       }
@@ -132,22 +128,7 @@ export function SalaComputacionPanel() {
     void loadData();
   }, []);
 
-  // Sincronización en tiempo real local para no perder cambios
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setReservas(getReservaSalaFromStorage());
-      setBloqueos(getHorarioBloqueadoFromStorage());
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  //Función para almacenar reservas al cambiar de sección o agregar una nueva reserva
-  useEffect(() => {
-    if (!isLoaded) return;
-    saveReservaSalaToStorage(reservas);
-    saveHorarioBloqueadoToStorage(bloqueos);
-  }, [reservas, bloqueos, isLoaded]);
+  // No localStorage syncing — app relies on Firestore
 
 
   //Constante para obtener los días de la semana presente

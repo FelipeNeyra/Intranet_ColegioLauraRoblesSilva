@@ -3,8 +3,8 @@
 import { createContext, useEffect, useState, type ReactNode } from "react";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from "firebase/auth";
 import { getFirebaseAuth } from "../firebase/config";
-import { getUserByEmailAsync, getUserByEmail, seedInitialUsers, type User } from "../lib/auth";
-import { getDocentesFromFirestore, getDocentesFromStorage } from "../lib/adminData";
+import { getUserByEmailAsync, seedInitialUsers, type User } from "../lib/auth";
+import { getDocentesFromFirestore } from "../lib/adminData";
 
 interface AuthContextType {
   user: User | null;
@@ -28,48 +28,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     seedInitialUsers();
 
     let unsub: (() => void) | null = null;
+
     (async () => {
       try {
         const auth = await getFirebaseAuth();
-        console.info("[browser] AuthContext got Firebase Auth instance");
         unsub = onAuthStateChanged(auth, async () => {
           const currentUser = auth.currentUser;
           if (currentUser?.email) {
-            const storedUser = await getUserByEmailAsync(currentUser.email);
-            const localUser = getUserByEmail(currentUser.email);
-            const profile = storedUser ?? localUser;
+            // Prefer Firestore user profile
+            let profile = await getUserByEmailAsync(currentUser.email);
 
-            let userId = profile?.id ?? currentUser.uid;
-            let userName = profile?.nombre ?? currentUser.displayName ?? currentUser.email;
-            let userRole = profile?.rol ?? "Profesor";
-
+            // If no explicit usuario doc, try to match a docente by correo
             if (!profile) {
               try {
-                const docentesFromFirestore = await getDocentesFromFirestore();
-                const docenteMatch = docentesFromFirestore.find((doc) => doc.correo === currentUser.email);
-                if (docenteMatch) {
-                  userId = docenteMatch.id;
-                  userName = docenteMatch.nombre;
-                  userRole = "Profesor";
+                const docentes = await getDocentesFromFirestore();
+                const match = docentes.find((d) => d.correo === currentUser.email);
+                if (match) {
+                  profile = {
+                    id: match.id,
+                    nombre: match.nombre,
+                    email: currentUser.email,
+                    password: "",
+                    rol: "Profesor",
+                  } as User;
                 }
-              } catch {
-                const docentesFromStorage = getDocentesFromStorage();
-                const docenteMatch = docentesFromStorage.find((doc) => doc.correo === currentUser.email);
-                if (docenteMatch) {
-                  userId = docenteMatch.id;
-                  userName = docenteMatch.nombre;
-                  userRole = "Profesor";
-                }
+              } catch (e) {
+                console.error("Error fetching docentes for auth auto-provision:", e);
               }
             }
 
-            setUser({
-              id: userId,
-              nombre: userName,
-              email: currentUser.email,
-              password: "",
-              rol: userRole,
-            });
+            const userId = profile?.id ?? currentUser.uid;
+            const userName = profile?.nombre ?? currentUser.displayName ?? currentUser.email;
+            const userRole = (profile?.rol as User["rol"]) ?? "Profesor";
+
+            setUser({ id: userId, nombre: userName, email: currentUser.email, password: "", rol: userRole });
           } else {
             setUser(null);
           }
@@ -92,12 +84,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      console.info('[browser] Firebase signInWithEmailAndPassword succeeded for', email);
       return { success: true };
     } catch (e) {
       const err = e as any;
       const code = err?.code ?? err?.message ?? "auth/error";
-      const message = err?.message ?? String(err);
 
       const shouldTryAutoProvision =
         code === "auth/user-not-found" ||
@@ -105,14 +95,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         (typeof code === "string" && code.toUpperCase().includes("INVALID_LOGIN_CREDENTIALS"));
 
       if (shouldTryAutoProvision) {
-        const localUser = getUserByEmail(email);
-        let stored = localUser;
-
+        let stored: User | undefined;
         try {
-          const firestoreUser = await getUserByEmailAsync(email);
-          if (firestoreUser) {
-            stored = firestoreUser;
-          }
+          stored = await getUserByEmailAsync(email);
         } catch (e3) {
           console.error("Error fetching user during auto-provision:", e3);
         }
@@ -121,7 +106,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             await createUserWithEmailAndPassword(auth, email, stored.password);
             await signInWithEmailAndPassword(auth, email, stored.password);
-            console.info("Auto-provisioning succeeded for", email);
             return { success: true };
           } catch (e2) {
             const err2 = e2 as any;
@@ -129,7 +113,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (code2 === "auth/email-already-in-use") {
               try {
                 await signInWithEmailAndPassword(auth, email, stored.password);
-                console.info("Auto-provisioning fallback sign-in succeeded for", email);
                 return { success: true };
               } catch (e4) {
                 console.error("Auto-provisioning sign in fallback failed:", e4);
@@ -141,7 +124,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      console.error("Firebase login error:", code, message);
       return { success: false, error: code };
     }
   };

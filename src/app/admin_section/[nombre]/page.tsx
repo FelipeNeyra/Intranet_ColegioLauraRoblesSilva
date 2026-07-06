@@ -11,14 +11,10 @@ import {
   Docente,
   cursoNiveles,
   letrasCurso,
-  getCursosFromStorage,
-  getDocentesFromStorage,
   getCursosFromFirestore,
   getDocentesFromFirestore,
   getNewDocente,
   getNewCurso,
-  saveCursosToStorage,
-  saveDocentesToStorage,
   addCursoToFirestore,
   addDocenteToFirestore,
   deleteCursoFromFirestore,
@@ -31,7 +27,7 @@ import {
   formatRut,
 } from "../../../lib/adminData";
 import ConfirmDialog from "../../../components/common/ConfirmDialog";
-import { addUserAccount, deleteUserByEmail, generateUserId, getUserByEmail, updateUserByEmail } from "../../../lib/auth";
+import { addUserAccount, deleteUserByEmail, generateUserId, getUserByEmailAsync, updateUserByEmail } from "../../../lib/auth";
 
 const sections = ["Cursos", "Docentes", "Sala de Computación"] as const;
 type Section = (typeof sections)[number];
@@ -113,55 +109,30 @@ export default function AdminSectionPage() {
 
   useEffect(() => {
     seedInitialAdminData();
-    setCursos(getCursosFromStorage());
-    setDocentes(getDocentesFromStorage());
-    setIsLoaded(true);
 
-    const loadFirestoreData = async () => {
+    (async () => {
       try {
         const [cursosFromFirebase, docentesFromFirebase] = await Promise.all([
           getCursosFromFirestore(),
           getDocentesFromFirestore(),
         ]);
 
-        if (cursosFromFirebase.length > 0) {
-          setCursos(cursosFromFirebase);
-        } else {
-          const localCursos = getCursosFromStorage();
-          await Promise.all(localCursos.map(async (curso) => {
-            try {
-              await addCursoToFirestore(curso);
-            } catch (error) {
-              console.error("Error seeding curso to Firestore:", error);
-            }
-          }));
-        }
-
-        if (docentesFromFirebase.length > 0) {
-          setDocentes(docentesFromFirebase);
-        } else {
-          const localDocentes = getDocentesFromStorage();
-          await Promise.all(localDocentes.map(async (docente) => {
-            try {
-              await addDocenteToFirestore(docente);
-            } catch (error) {
-              console.error("Error seeding docente to Firestore:", error);
-            }
-          }));
-        }
+        setCursos(cursosFromFirebase ?? []);
+        setDocentes(docentesFromFirebase ?? []);
+        setIsLoaded(true);
       } catch (error) {
         console.error("No se pudieron cargar datos desde Firestore:", error);
+        setCursos([]);
+        setDocentes([]);
+        setIsLoaded(true);
       }
-    };
-
-    void loadFirestoreData();
+    })();
   }, []);
 
+  // No localStorage syncing — app relies on Firestore
   useEffect(() => {
     if (!isLoaded) return;
-    saveCursosToStorage(cursos);
-    saveDocentesToStorage(docentes);
-  }, [cursos, docentes, isLoaded]);
+  }, [isLoaded]);
 
   const generateEmail = (nombre: string): string => {
     if (!nombre.trim()) return "";
@@ -266,9 +237,9 @@ export default function AdminSectionPage() {
       return;
     }
 
-    const authUser = getUserByEmail(oldDocente.correo);
+    const authUser = await getUserByEmailAsync(oldDocente.correo);
     if (authUser) {
-      const authUpdated = updateUserByEmail(oldDocente.correo, {
+      const authUpdated = await updateUserByEmail(oldDocente.correo, {
         nombre: updatedDocente.nombre,
         email: updatedDocente.correo,
       });
@@ -302,10 +273,14 @@ export default function AdminSectionPage() {
     closeEditDocente();
   };
 
-  const handleDeleteDocente = async (id: string) => {
+    const handleDeleteDocente = async (id: string) => {
     const docente = docentes.find((d) => d.id === id);
     if (docente) {
-      deleteUserByEmail(docente.correo);
+      try {
+        await deleteUserByEmail(docente.correo);
+      } catch (e) {
+        console.error("Error eliminando usuario de auth:", e);
+      }
     }
     setDocentes((current) => current.filter((docente) => docente.id !== id));
 
@@ -427,17 +402,16 @@ export default function AdminSectionPage() {
       );
       setDocentes((current) => [...current, newDocente]);
 
-      try {
-        const result = addUserAccount({ nombre: newDocente.nombre, email: newDocente.correo, rol: "Profesor" }, userId);
-        if ("error" in result) {
-          // eslint-disable-next-line no-console
-          console.warn("No se creó cuenta de usuario:", result.error);
-        } else {
-          setLastCreatedAccount({ email: result.user.email, password: result.password });
+        try {
+          const result = await addUserAccount({ nombre: newDocente.nombre, email: newDocente.correo, rol: "Profesor" }, userId);
+          if ("error" in result) {
+            console.warn("No se creó cuenta de usuario:", result.error);
+          } else {
+            setLastCreatedAccount({ email: result.user.email, password: result.password });
+          }
+        } catch (error) {
+          console.error("Error creando usuario de auth:", error);
         }
-      } catch (error) {
-        console.error("Error creando usuario de auth:", error);
-      }
 
       try {
         await addDocenteToFirestore(newDocente);

@@ -279,183 +279,48 @@ export async function listenToCitas(callback: (items: Cita[]) => void): Promise<
   return unsubscribe;
 }
 
-//Instancias de Arrays en localStorage
-const CURSOS_STORAGE_KEY = "intranet_cursos";
-const DOCENTES_STORAGE_KEY = "intranet_docentes";
-const RESERVAS_SALA_STORAGE_KEY = "intranet_reservas_sala";
-const HORARIOS_BLOQUEADOS_STORAGE_KEY = "intranet_horarios_bloqueados";
-const CITAS_STORAGE_KEY = "intranet_citas";
-const CALIFICACIONES_STORAGE_KEY = "intranet_calificaciones";
-
-//Función que obtiene y parsea datos de localStorage
-const getStorageValue = <T>(key: string, fallback: T): T => {
-  if (typeof window === "undefined") {
-    return fallback;
-  }
-
-  const raw = window.localStorage.getItem(key);
-  if (!raw) {
-    return fallback;
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as T;
-    return parsed;
-  } catch {
-    return fallback;
-  }
-};
-
-//Función que lleva a cabo el registro de datos en localStorage
-const setStorageValue = <T>(key: string, value: T): void => {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(key, JSON.stringify(value));
-};
-
-//Obtener conjuntos de datos almacenados en localStorage
-export const getCursosFromStorage = (): Curso[] =>
-  getStorageValue<Curso[]>(CURSOS_STORAGE_KEY, []);
-
-export const getDocentesFromStorage = (): Docente[] =>
-  getStorageValue<Docente[]>(DOCENTES_STORAGE_KEY, []);
-
-export const getReservaSalaFromStorage = (): ReservaSala[] =>
-  getStorageValue<ReservaSala[]>(RESERVAS_SALA_STORAGE_KEY, []);
-
-export const getHorarioBloqueadoFromStorage = (): HorarioBloqueado[] =>
-  getStorageValue<HorarioBloqueado[]>(HORARIOS_BLOQUEADOS_STORAGE_KEY, []);
-
-export const getCitasFromStorage = (): Cita[] =>
-  getStorageValue<Cita[]>(CITAS_STORAGE_KEY, []);
-
-export const getCalificacionesFromStorage = (): Calificacion[] =>
-  getStorageValue<Calificacion[]>(CALIFICACIONES_STORAGE_KEY, []);
-
-//Almacenar conjuntos de datos en localStorage
-//Estas funciones se ejecutan directamente desde page.tsx
-export const saveCursosToStorage = (cursos: Curso[]): void =>
-  setStorageValue(CURSOS_STORAGE_KEY, cursos);
-
-export const saveDocentesToStorage = (docentes: Docente[]): void =>
-  setStorageValue(DOCENTES_STORAGE_KEY, docentes);
-
-export const saveReservaSalaToStorage = (reservas: ReservaSala[]): void =>
-  setStorageValue(RESERVAS_SALA_STORAGE_KEY, reservas);
-
-export const saveHorarioBloqueadoToStorage = (bloqueos: HorarioBloqueado[]): void =>
-  setStorageValue(HORARIOS_BLOQUEADOS_STORAGE_KEY, bloqueos);
-
-export const saveCitasToStorage = (citas: Cita[]): void =>
-  setStorageValue(CITAS_STORAGE_KEY, citas);
-
-export const saveCalificacionesStorage = (calificaciones: Calificacion[]): void =>
-  setStorageValue(CALIFICACIONES_STORAGE_KEY, calificaciones);
-
-//Función para registrar datos iniciales
-//Estos datos (Cursos y Docentes) se registran al momento de iniciar sesión por primera vez
+// Replace previous localStorage fallbacks: app will use Firestore exclusively.
 export const seedInitialAdminData = (): void => {
-  if (typeof window === "undefined") {
-    return;
-  }
+  // Seed Firestore with initial admin data when collections are empty.
+  void (async () => {
+    try {
+      const cursos = await getCursosFromFirestore();
+      const docentes = await getDocentesFromFirestore();
+      const reservas = await getReservaSalaFromFirestore();
+      const bloqueos = await getHorarioBloqueadoFromFirestore();
 
-  //Obtener instancias de Arrays de localStorage
-  const hasCursos = window.localStorage.getItem(CURSOS_STORAGE_KEY);
-  const hasDocentes = window.localStorage.getItem(DOCENTES_STORAGE_KEY);
-  const hasReservasSala = window.localStorage.getItem(RESERVAS_SALA_STORAGE_KEY);
-  const hasHorariosBloqueados = window.localStorage.getItem(HORARIOS_BLOQUEADOS_STORAGE_KEY);
+      // If collections already have data, skip seeding
+      if ((cursos && cursos.length > 0) || (docentes && docentes.length > 0) || (reservas && reservas.length > 0) || (bloqueos && bloqueos.length > 0)) {
+        return;
+      }
 
-  //Registro inicial de Cursos
-  if (!hasCursos) {
-    saveCursosToStorage([
-      { id: "curso-1", nombre: "1° Básico A", profesorId: "doc-1" },
-      { id: "curso-2", nombre: "2° Básico B", profesorId: "doc-2" },
-      { id: "curso-3", nombre: "3° Básico C", profesorId: "doc-3" },
-    ]);
-  }
+      // Default cursos
+      const defaultCursos: Curso[] = [
+        getNewCurso({ nombre: "1° Básico A", profesorId: "doc-1" }),
+        getNewCurso({ nombre: "2° Básico B", profesorId: "doc-2" }),
+        getNewCurso({ nombre: "3° Básico C", profesorId: "doc-3" }),
+      ];
 
-  //Registro inicial de Docentes
-  if (!hasDocentes) {
-    saveDocentesToStorage([
-      {
-        id: "doc-1",
-        nombre: "Carlos Ramírez",
-        rut: "15.678.901-2",
-        fechaNacimiento: "1985-03-20",
-        correo: "carlos.ramirez@laurarobles.cl",
-        cursoId: "curso-1",
-        asignaturas: ["Matemáticas", "Ciencias Naturales"],
-      },
-      {
-        id: "doc-2",
-        nombre: "María Fuentes",
-        rut: "16.789.012-3",
-        fechaNacimiento: "1988-07-14",
-        correo: "maria.fuentes@laurarobles.cl",
-        cursoId: "curso-2",
-        asignaturas: ["Lenguaje y Comunicación", "Historia, Geografía y Ciencias Sociales"],
-      },
-      {
-        id: "doc-3",
-        nombre: "Diego Morales",
-        rut: "17.890.123-4",
-        fechaNacimiento: "1990-01-25",
-        correo: "diego.morales@laurarobles.cl",
-        cursoId: "curso-3",
-        asignaturas: ["Inglés", "Educación Física"],
-      },
-    ]);
-  }
+      // Default docentes with stable IDs
+      const defaultDocentes: Docente[] = [
+        getNewDocente({ nombre: "Carlos Ramírez", rut: "15.678.901-2", fechaNacimiento: "1985-03-20", correo: "carlos.ramirez@laurarobles.cl", cursoId: defaultCursos[0].id, asignaturas: ["Matemáticas", "Ciencias Naturales"] }, "doc-1"),
+        getNewDocente({ nombre: "María Fuentes", rut: "16.789.012-3", fechaNacimiento: "1988-07-14", correo: "maria.fuentes@laurarobles.cl", cursoId: defaultCursos[1].id, asignaturas: ["Lenguaje y Comunicación", "Historia, Geografía y Ciencias Sociales"] }, "doc-2"),
+        getNewDocente({ nombre: "Diego Morales", rut: "17.890.123-4", fechaNacimiento: "1990-01-25", correo: "diego.morales@laurarobles.cl", cursoId: defaultCursos[2].id, asignaturas: ["Inglés", "Educación Física"] }, "doc-3"),
+      ];
 
-  //Registro inicial de Reservas para Sala de Computación
-  if (!hasReservasSala) {
-    saveReservaSalaToStorage([
-      {
-        id: "reserva-1",
-        nombre: "Camila",
-        apellido: "López",
-        rut: "18.901.234-5",
-        correo: "camila.lopez@laurarobles.cl",
-        fecha: new Date().toISOString().slice(0, 10),
-        horaInicio: "10:00",
-        horaFin: "11:00",
-        curso: "5°A",
-        asignatura: "Informática",
-        personas: "18",
-        motivo: "Clase práctica de informática",
-        estado: "Aprobada",
-      },
-      {
-        id: "reserva-2",
-        nombre: "Jorge",
-        apellido: "Pérez",
-        rut: "19.012.345-6",
-        correo: "jorge.perez@laurarobles.cl",
-        fecha: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
-        horaInicio: "14:00",
-        horaFin: "15:00",
-        curso: "6°B",
-        asignatura: "Biología",
-        personas: "25",
-        motivo: "Uso de software educativo",
-        estado: "Pendiente",
-      },
-    ]);
-  }
+      // Write defaults to Firestore
+      await Promise.all(defaultCursos.map((c) => addCursoToFirestore(c)));
+      await Promise.all(defaultDocentes.map((d) => addDocenteToFirestore(d)));
 
-  //Registro inicial de Horarios Bloqueados dentro de las Reservas
-  if (!hasHorariosBloqueados) {
-    saveHorarioBloqueadoToStorage([
-      {
-        id: "bloqueo-1",
-        fecha: new Date().toISOString().slice(0, 10),
-        hora: "12:00",
-        motivo: "Reunión administrativa",
-      },
-    ]);
-  }
+      // Optionally seed a sample bloqueo
+      const sampleBloqueo = getNewHorarioBloqueado({ fecha: new Date().toISOString().slice(0, 10), hora: "12:00", motivo: "Reunión administrativa" });
+      await addHorarioBloqueadoToFirestore(sampleBloqueo);
+    } catch (e) {
+      // If seeding fails, don't block the app — log and continue
+      // eslint-disable-next-line no-console
+      console.error("Error seeding initial admin data to Firestore:", e);
+    }
+  })();
 };
 
 //Constante que define los niveles (o grados) ácademicos que puede tener un curso

@@ -7,7 +7,7 @@ import {
   ReservaSala,
   asignaturaOptions,
   cursoNiveles,
-  getDocentesFromStorage,
+  getDocentesFromFirestore,
   getNewReservaSala,
   letrasCurso,
 } from "../../lib/adminData";
@@ -90,6 +90,7 @@ export function ProfesorReservaPanel({
   bloqueos,
   onReservaCreada,
 }: ProfesorReservaPanelProps) {
+  const [docentes, setDocentes] = useState<any[]>([]);
   const [weekStart, setWeekStart] = useState<string>(getToday());
   const [selectedSlot, setSelectedSlot] = useState<{ fecha: string; hora: string } | null>(null);
   const [curso, setCurso] = useState("");
@@ -102,10 +103,19 @@ export function ProfesorReservaPanel({
   const weekStartArreglado = new Date(weekStart)
   weekStartArreglado.setDate(weekStartArreglado.getDate() + 1);
   const weekDates = useMemo(() => getWeekDates(new Date(weekStartArreglado)), [weekStart]);
-  const docenteActual = useMemo(
-    () => getDocentesFromStorage().find((docente) => docente.id === profesorId),
-    [profesorId]
-  );
+  useEffect(() => {
+    (async () => {
+      try {
+        const docs = await getDocentesFromFirestore();
+        setDocentes(docs);
+      } catch (e) {
+        console.error("Error cargando docentes desde Firestore:", e);
+        setDocentes([]);
+      }
+    })();
+  }, []);
+
+  const docenteActual = docentes.find((docente) => docente.id === profesorId);
   const asignaturasDisponibles = docenteActual?.asignaturas?.length
     ? docenteActual.asignaturas
     : asignaturaOptions;

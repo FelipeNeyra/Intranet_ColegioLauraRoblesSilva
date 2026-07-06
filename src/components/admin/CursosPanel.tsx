@@ -5,8 +5,7 @@ import styles from "./CursosPanel.module.css";
 import {
   Curso,
   Estudiante,
-  getCursosFromStorage,
-  saveCursosToStorage,
+  getCursosFromFirestore,
   getNewEstudiante,
   validateEmail,
   validateRut,
@@ -87,12 +86,18 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange, onDeleteCurso 
     let unsubscribe: (() => void) | null = null;
 
     seedInitialAdminData();
-    const cursosData = getCursosFromStorage();
-    if (!cursosProp) {
-      setInternalCursos(cursosData);
-    }
 
     (async () => {
+      if (!cursosProp) {
+        try {
+          const cursosData = await getCursosFromFirestore();
+          setInternalCursos(cursosData);
+        } catch (e) {
+          console.error("Error cargando cursos desde Firestore:", e);
+          setInternalCursos([]);
+        }
+      }
+
       unsubscribe = await listenToEstudiantes((data) => {
         setEstudiantes(data);
         setIsLoaded(true);
@@ -110,10 +115,7 @@ export function CursosPanel({ cursos: cursosProp, onCursosChange, onDeleteCurso 
     }
   }, [cursos.length]);
 
-  useEffect(() => {
-    if (!isLoaded) return;
-    saveCursosToStorage(cursos);
-  }, [cursos, isLoaded]);
+  // No localStorage syncing — app relies on Firestore
 
   const generateEmail = (nombre: string): string => {
     if (!nombre.trim()) return "";
