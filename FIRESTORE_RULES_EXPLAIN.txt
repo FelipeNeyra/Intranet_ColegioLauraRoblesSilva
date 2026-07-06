@@ -1,0 +1,106 @@
+Firestore rules - Explicación, despliegue y verificación
+=====================================================
+
+Resumen
+-------
+Este archivo describe las reglas de seguridad que se añadieron en `firestore.rules`, qué protegen,
+cómo desplegarlas desde tu máquina y cómo verificar que funcionan correctamente.
+
+Ubicación de las reglas
+-----------------------
+- Archivo de reglas: `firestore.rules` (en la raíz del repositorio).
+- Archivo con helpers y nota: `src/lib/adminData.ts` (contiene un comentario indicando la ubicación
+  y cómo desplegar las reglas).
+
+Qué hacen las reglas (resumen funcional)
+----------------------------------------
+- Restringen lectura/escritura para que **solo usuarios autenticados** puedan leer datos.
+- Permiten la creación de `calificaciones` y `citas` únicamente si el campo `profesorId` del documento
+  coincide con el `uid` del usuario autenticado (`request.auth.uid`). Esto evita que un docente A
+  cree datos atribuidos a un docente B.
+- Restringen creación/actualización/eliminación de colecciones administrativas (`cursos`, `docentes`,
+  `estudiantes`, `horarios_bloqueados`) a usuarios con la custom claim `admin == true`.
+- Para `reservas_sala` se permite crear si el autor coincide por correo (`request.auth.token.email`) o
+  por `profesorId == request.auth.uid`; solo admins pueden modificar o borrar reservas.
+- Se añadió una colección `usuarios` con lectura para autenticados y creación/edición solo por admin.
+
+Por qué es importante
+---------------------
+- Evita reglas abiertas (ej. `allow read, write: if true`) que exponen la base de datos.
+- Satisface los criterios de la evaluación: acceso solo para usuarios autenticados y reglas más
+  granulares (p. ej. solo el propietario puede crear sus propios documentos).
+
+Cómo desplegar las reglas (pasos)
+--------------------------------
+1. Abre tu terminal (PowerShell o CMD) y posicionate en la carpeta del proyecto:
+
+```bash
+cd C:\Users\Leand\OneDrive\Documentos\GitHub\Intranet_ColegioLauraRoblesSilva
+```
+
+2. Loguéate en Firebase (si no lo has hecho):
+
+```bash
+firebase login
+```
+
+3. Selecciona el proyecto (si no está seleccionado):
+
+```bash
+firebase use --add
+```
+
+4. Despliega solo las reglas de Firestore:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
+5. La consola mostrará el resultado del despliegue. También puedes ver y editar reglas directamente
+   desde Firebase Console → Firestore → Rules.
+
+Asignar admin (custom claim)
+---------------------------
+Las reglas usan `request.auth.token.admin == true` para permitir operaciones administrativas.
+Asigna esa claim a una cuenta administrativa usando Firebase Admin SDK (desde servidor o script):
+
+Node.js (ejemplo):
+```js
+const admin = require('firebase-admin');
+// inicializa admin con credenciales apropiadas
+await admin.auth().setCustomUserClaims('<UID_ADMIN>', { admin: true });
+```
+
+Nota: el usuario puede necesitar cerrar sesión y volver a iniciar sesión (o esperar que el token
+se refresque) para que la claim esté disponible en `request.auth.token`.
+
+Cómo verificar que las reglas funcionan
+-------------------------------------
+1. Prueba positiva: Inicia sesión con una cuenta docente (UID X) y crea una calificación desde la app.
+   - El documento debe aparecer en Firestore con `profesorId == UID X`.
+2. Prueba negativa: Inicia sesión con otra cuenta con distinto UID Y e intenta crear un documento con
+   `profesorId == UID X`. La petición debe fallar con error 403 (Forbidden) y no debe crear documento.
+   - Revisa la consola del navegador (DevTools) para confirmar el error y el mensaje de Firestore.
+3. Verifica en Firebase Console → Firestore → colecciones: `calificaciones`, `citas`, `reservas_sala`, etc.
+
+Notas sobre el código del proyecto
+----------------------------------
+- `src/lib/adminData.ts`: contiene helpers para Firestore. Se actualizó para que las funciones `add*`
+  usen el `id` local cuando existe (así los IDs en localStorage y Firestore coinciden).
+- `src/components/profesor/ProfesorCursosPanel.tsx`: la UI del profesor ahora usa `auth.currentUser.uid`
+  al crear `calificaciones` y `citas`, intenta guardar en Firestore y mantiene sincronización en tiempo real
+  mediante listeners (`listenToCalificaciones`, `listenToCitas`).
+
+Consejos finales y buenas prácticas
+----------------------------------
+- Prueba los flujos con cuentas reales (admin y profesor) y observa la consola de Firestore.
+- Considera añadir validaciones cliente extra (p. ej. comprobar `auth.uid === curso.profesorId` antes de enviar)
+  para mejorar UX y reducir intentos inválidos contra las reglas.
+- Documenta en la entrega (o en la explicación de la evaluación) que las reglas están en `firestore.rules`
+  y que las despliegas con `firebase deploy --only firestore:rules`.
+
+Si quieres, puedo:
+- Generar un script de despliegue automatizado (npm script) y añadirlo a `package.json`.
+- Agregar una nota breve en el `README.md` del proyecto que explique las reglas y el flujo de despliegue.
+
+Fin del documento.

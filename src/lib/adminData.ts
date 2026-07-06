@@ -70,14 +70,26 @@ export interface HorarioBloqueado {
   motivo: string;
 }
 
-import { collection, doc, query, getDocs, onSnapshot, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, doc, query, getDocs, onSnapshot, setDoc, updateDoc, deleteDoc, where } from "firebase/firestore";
 import { getFirebaseFirestore } from "../firebase/config";
+
+/*
+  Firestore security rules are placed at the project root in `firestore.rules`.
+  Path: /firestore.rules
+  Deploy with: `firebase deploy --only firestore:rules`
+
+  This file contains the rules that validate creation of `calificaciones`
+  and `citas` so only the authenticated professor (uid) can create documents
+  using their own UID as `profesorId`.
+*/
 
 const ESTUDIANTES_COLLECTION = "estudiantes";
 const CURSOS_COLLECTION = "cursos";
 const DOCENTES_COLLECTION = "docentes";
 const RESERVAS_SALA_COLLECTION = "reservas_sala";
 const HORARIOS_BLOQUEADOS_COLLECTION = "horarios_bloqueados";
+const CALIFICACIONES_COLLECTION = "calificaciones";
+const CITAS_COLLECTION = "citas";
 
 async function getFirestoreInstance() {
   return getFirebaseFirestore();
@@ -102,9 +114,10 @@ export async function listenToEstudiantes(callback: (estudiantes: Estudiante[]) 
 
 export async function addEstudianteToFirestore(estudiante: Omit<Estudiante, "id">): Promise<Estudiante> {
   const db = await getFirestoreInstance();
-  const docRef = doc(collection(db, ESTUDIANTES_COLLECTION));
-  await setDoc(docRef, estudiante);
-  return { id: docRef.id, ...estudiante };
+  // Use provided id if present on the object (keeps local IDs consistent), otherwise generate one
+  const id = (estudiante as any).id || doc(collection(db, ESTUDIANTES_COLLECTION)).id;
+  await setDoc(doc(db, ESTUDIANTES_COLLECTION, id), estudiante);
+  return { id, ...(estudiante as Omit<Estudiante, "id">) };
 }
 
 export async function updateEstudianteInFirestore(id: string, updates: Partial<Omit<Estudiante, "id">>): Promise<void> {
@@ -180,7 +193,8 @@ export async function getReservaSalaFromFirestore(): Promise<ReservaSala[]> {
 
 export async function addReservaSalaToFirestore(reserva: ReservaSala): Promise<void> {
   const db = await getFirestoreInstance();
-  await setDoc(doc(db, RESERVAS_SALA_COLLECTION, reserva.id), reserva);
+  const id = reserva.id || doc(collection(db, RESERVAS_SALA_COLLECTION)).id;
+  await setDoc(doc(db, RESERVAS_SALA_COLLECTION, id), { ...reserva, id });
 }
 
 export async function updateReservaSalaInFirestore(id: string, updates: Partial<Omit<ReservaSala, "id">>): Promise<void> {
@@ -202,7 +216,8 @@ export async function getHorarioBloqueadoFromFirestore(): Promise<HorarioBloquea
 
 export async function addHorarioBloqueadoToFirestore(bloqueo: HorarioBloqueado): Promise<void> {
   const db = await getFirestoreInstance();
-  await setDoc(doc(db, HORARIOS_BLOQUEADOS_COLLECTION, bloqueo.id), bloqueo);
+  const id = bloqueo.id || doc(collection(db, HORARIOS_BLOQUEADOS_COLLECTION)).id;
+  await setDoc(doc(db, HORARIOS_BLOQUEADOS_COLLECTION, id), { ...bloqueo, id });
 }
 
 export async function updateHorarioBloqueadoInFirestore(id: string, updates: Partial<Omit<HorarioBloqueado, "id">>): Promise<void> {
@@ -213,6 +228,55 @@ export async function updateHorarioBloqueadoInFirestore(id: string, updates: Par
 export async function deleteHorarioBloqueadoFromFirestore(id: string): Promise<void> {
   const db = await getFirestoreInstance();
   await deleteDoc(doc(db, HORARIOS_BLOQUEADOS_COLLECTION, id));
+}
+
+// Calificaciones (Firestore)
+export async function getCalificacionesFromFirestore(): Promise<Calificacion[]> {
+  const db = await getFirestoreInstance();
+  const q = query(collection(db, CALIFICACIONES_COLLECTION));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as Omit<Calificacion, "id">) }));
+}
+
+export async function addCalificacionToFirestore(calificacion: Calificacion): Promise<void> {
+  const db = await getFirestoreInstance();
+  // Use provided id to keep local and remote IDs consistent. If no id provided, generate a new doc id.
+  const id = calificacion.id || doc(collection(db, CALIFICACIONES_COLLECTION)).id;
+  await setDoc(doc(db, CALIFICACIONES_COLLECTION, id), { ...calificacion, id });
+}
+
+export async function listenToCalificaciones(callback: (items: Calificacion[]) => void): Promise<() => void> {
+  const db = await getFirestoreInstance();
+  const q = query(collection(db, CALIFICACIONES_COLLECTION));
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const items = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as Omit<Calificacion, "id">) }));
+    callback(items);
+  });
+  return unsubscribe;
+}
+
+// Citas (Firestore)
+export async function getCitasFromFirestore(): Promise<Cita[]> {
+  const db = await getFirestoreInstance();
+  const q = query(collection(db, CITAS_COLLECTION));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as Omit<Cita, "id">) }));
+}
+
+export async function addCitaToFirestore(cita: Cita): Promise<void> {
+  const db = await getFirestoreInstance();
+  const id = cita.id || doc(collection(db, CITAS_COLLECTION)).id;
+  await setDoc(doc(db, CITAS_COLLECTION, id), { ...cita, id });
+}
+
+export async function listenToCitas(callback: (items: Cita[]) => void): Promise<() => void> {
+  const db = await getFirestoreInstance();
+  const q = query(collection(db, CITAS_COLLECTION));
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const items = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as Omit<Cita, "id">) }));
+    callback(items);
+  });
+  return unsubscribe;
 }
 
 //Instancias de Arrays en localStorage

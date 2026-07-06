@@ -16,7 +16,14 @@ import {
   getNewCalificacion,
   getNewCita,
   listenToEstudiantes,
+  getCalificacionesFromFirestore,
+  addCalificacionToFirestore,
+  getCitasFromFirestore,
+  addCitaToFirestore,
+  listenToCalificaciones,
+  listenToCitas,
 } from "../../lib/adminData";
+import { getFirebaseAuth } from "../../firebase/config";
 
 interface CalificacionForm {
   asignatura: string;
@@ -66,6 +73,19 @@ export function ProfesorCursosPanel({ profesorId }: { profesorId: string }) {
         if (cursosFromFirestore.length > 0) {
           setCursos(cursosFromFirestore);
         }
+        try {
+          const califs = await getCalificacionesFromFirestore();
+          if (califs && califs.length > 0) setCalificaciones(califs);
+        } catch (e) {
+          console.error("Error cargando calificaciones desde Firestore:", e);
+        }
+
+        try {
+          const citasFromFs = await getCitasFromFirestore();
+          if (citasFromFs && citasFromFs.length > 0) setCitas(citasFromFs);
+        } catch (e) {
+          console.error("Error cargando citas desde Firestore:", e);
+        }
       } catch (error) {
         console.error("Error cargando cursos desde Firestore:", error);
       }
@@ -81,6 +101,35 @@ export function ProfesorCursosPanel({ profesorId }: { profesorId: string }) {
     };
   }, []);
 
+  // Real-time listeners for calificaciones and citas to keep UI in sync with Firestore
+  useEffect(() => {
+    let unsubCal: (() => void) | null = null;
+    let unsubCitas: (() => void) | null = null;
+
+    (async () => {
+      try {
+        unsubCal = await listenToCalificaciones((items) => {
+          setCalificaciones(items);
+        });
+      } catch (e) {
+        console.error("listenToCalificaciones failed:", e);
+      }
+
+      try {
+        unsubCitas = await listenToCitas((items) => {
+          setCitas(items);
+        });
+      } catch (e) {
+        console.error("listenToCitas failed:", e);
+      }
+    })();
+
+    return () => {
+      if (unsubCal) unsubCal();
+      if (unsubCitas) unsubCitas();
+    };
+  }, []);
+
   useEffect(() => {
     if (!isLoaded) return;
     saveCalificacionesStorage(calificaciones);
@@ -91,7 +140,7 @@ export function ProfesorCursosPanel({ profesorId }: { profesorId: string }) {
     saveCitasToStorage(citas);
   }, [citas, isLoaded]);
 
-  const handleAddCalificacion = (e: FormEvent<HTMLFormElement>, estudianteId: string) => {
+  const handleAddCalificacion = async (e: FormEvent<HTMLFormElement>, estudianteId: string) => {
     e.preventDefault();
 
     if (!calificacionForm.asignatura.trim() || calificacionForm.calificacion < 1 || calificacionForm.calificacion > 7) {
@@ -101,9 +150,12 @@ export function ProfesorCursosPanel({ profesorId }: { profesorId: string }) {
     const estudiante = estudiantes.find((e) => e.id === estudianteId);
     if (!estudiante) return;
 
+    const auth = await getFirebaseAuth();
+    const uid = auth.currentUser?.uid ?? profesorId;
+
     const nuevaCalificacion = getNewCalificacion({
       estudianteId,
-      profesorId,
+      profesorId: uid,
       cursoId: estudiante.cursoId,
       asignatura: calificacionForm.asignatura,
       calificacion: calificacionForm.calificacion,
@@ -111,7 +163,14 @@ export function ProfesorCursosPanel({ profesorId }: { profesorId: string }) {
       descripcion: calificacionForm.descripcion,
     });
 
-    setCalificaciones([...calificaciones, nuevaCalificacion]);
+    // Try to save to Firestore, fall back to local state if it fails
+    try {
+      await addCalificacionToFirestore(nuevaCalificacion);
+    } catch (err) {
+      console.error("Error guardando calificación en Firestore:", err);
+    }
+
+    setCalificaciones((current) => [...current, nuevaCalificacion]);
     setCalificacionFormFor(null);
     setCalificacionForm({
       asignatura: "",
@@ -120,7 +179,7 @@ export function ProfesorCursosPanel({ profesorId }: { profesorId: string }) {
     });
   };
 
-  const handleAddCita = (e: FormEvent<HTMLFormElement>, estudianteId: string) => {
+  const handleAddCita = async (e: FormEvent<HTMLFormElement>, estudianteId: string) => {
     e.preventDefault();
 
     if (!citaForm.fecha || !citaForm.hora || !citaForm.motivo.trim()) {
@@ -130,16 +189,25 @@ export function ProfesorCursosPanel({ profesorId }: { profesorId: string }) {
     const estudiante = estudiantes.find((e) => e.id === estudianteId);
     if (!estudiante) return;
 
+    const auth = await getFirebaseAuth();
+    const uid = auth.currentUser?.uid ?? profesorId;
+
     const nuevaCita = getNewCita({
       estudianteId,
-      profesorId,
+      profesorId: uid,
       fecha: citaForm.fecha,
       hora: citaForm.hora,
       motivo: citaForm.motivo,
       estado: "Agendada",
     });
 
-    setCitas([...citas, nuevaCita]);
+    try {
+      await addCitaToFirestore(nuevaCita);
+    } catch (err) {
+      console.error("Error guardando cita en Firestore:", err);
+    }
+
+    setCitas((current) => [...current, nuevaCita]);
     setCitaFormFor(null);
     setCitaForm({
       fecha: "",
