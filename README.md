@@ -7,14 +7,11 @@ Correr en CMD y en ruta de almacenamiento los siguientes comandos:
 ```bash
 npm install
 # luego
-npm run dev
-# o
-yarn dev
-# o
-pnpm dev
-# o
-bun dev
+npm install firebase
+# luego
+npm run dev 
 ```
+**Recordar**: Debe crearse y configurarse el archivo `.env.local` antes de iniciar la aplicación, de lo contrario no se podra iniciar sesión.
 
 Abrir [http://localhost:3000](http://localhost:3000) en el navegador para ver.
 
