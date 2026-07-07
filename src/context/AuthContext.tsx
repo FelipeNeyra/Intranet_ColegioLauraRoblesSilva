@@ -1,13 +1,14 @@
 "use client";
 
 import { createContext, useEffect, useState, type ReactNode } from "react";
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from "firebase/auth";
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, type User as FirebaseAuthUser } from "firebase/auth";
 import { getFirebaseAuth } from "../firebase/config";
-import { getUserByEmailAsync, seedInitialUsers, type User } from "../lib/auth";
+import { getUserByEmailAsync, isAuthStateSyncSuppressed, seedInitialUsers, type User } from "../lib/auth";
 import { getDocentesFromFirestore } from "../lib/adminData";
 
 interface AuthContextType {
   user: User | null;
+  firebaseUser: FirebaseAuthUser | null;
   isInitializing: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
@@ -15,6 +16,7 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
+  firebaseUser: null,
   isInitializing: true,
   login: async () => ({ success: false, error: "Contexto de autenticación no disponible." }),
   logout: async () => {},
@@ -22,6 +24,7 @@ export const AuthContext = createContext<AuthContextType>({
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseAuthUser | null>(null);
   const [isInitializing, setIsInitializing] = useState<boolean>(true);
 
   useEffect(() => {
@@ -33,7 +36,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const auth = await getFirebaseAuth();
         unsub = onAuthStateChanged(auth, async () => {
+          if (isAuthStateSyncSuppressed()) {
+            return;
+          }
+
           const currentUser = auth.currentUser;
+          setFirebaseUser(currentUser);
+
           if (currentUser?.email) {
             // Prefer Firestore user profile
             let profile = await getUserByEmailAsync(currentUser.email);
@@ -102,17 +111,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error("Error fetching user during auto-provision:", e3);
         }
 
-        if (stored && stored.password === password) {
+        const expectedPassword = stored?.password || (stored?.rol === "Profesor" ? "profe123456" : undefined);
+        if (stored && expectedPassword && password === expectedPassword) {
           try {
-            await createUserWithEmailAndPassword(auth, email, stored.password);
-            await signInWithEmailAndPassword(auth, email, stored.password);
+            await createUserWithEmailAndPassword(auth, email, expectedPassword);
+            await signInWithEmailAndPassword(auth, email, expectedPassword);
             return { success: true };
           } catch (e2) {
             const err2 = e2 as any;
             const code2 = err2?.code ?? err2?.message ?? "";
             if (code2 === "auth/email-already-in-use") {
               try {
-                await signInWithEmailAndPassword(auth, email, stored.password);
+                await signInWithEmailAndPassword(auth, email, expectedPassword);
                 return { success: true };
               } catch (e4) {
                 console.error("Auto-provisioning sign in fallback failed:", e4);
@@ -136,10 +146,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // ignore logout errors
     }
     setUser(null);
+    setFirebaseUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, isInitializing, login, logout }}>
+    <AuthContext.Provider value={{ user, firebaseUser, isInitializing, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

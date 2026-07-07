@@ -13,8 +13,19 @@ export interface User {
 export const USERS_STORAGE_KEY = "intranet_usuarios";
 
 // Firestore integration (async helpers)
-import { getFirebaseFirestore } from "../firebase/config";
+import { getFirebaseAuth, getFirebaseFirestore } from "../firebase/config";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { collection, query, where, getDocs, setDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
+
+const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+
+let suppressAuthStateSync = false;
+
+export const setAuthStateSyncSuppression = (value: boolean): void => {
+  suppressAuthStateSync = value;
+};
+
+export const isAuthStateSyncSuppressed = (): boolean => suppressAuthStateSync;
 
 async function getFirestoreInstance() {
   return getFirebaseFirestore();
@@ -59,29 +70,32 @@ export const initialAdminUsers: User[] = [
   },
 ];
 
+const getSeedUserByEmail = (email: string): User | undefined => {
+  const normalizedEmail = normalizeEmail(email);
+  return initialAdminUsers.find((u) => normalizeEmail(u.email) === normalizedEmail);
+};
+
 //Función para obtener los usuarios registrados que pueden iniciar sesión
 export const getUsersFromStorage = (): User[] => {
   // localStorage removed; return empty sync list. Use async Firestore helpers instead.
   return [];
 };
 
-//Función para registrar los usuarios iniciales en localStorage
+//Función para registrar los usuarios iniciales en Firestore
 //Esta función se llama desde AuthContext.tsx
 export const seedInitialUsers = (): void => {
-  // Seed initial users into Firestore in background when running locally.
   if (typeof window === "undefined") return;
-  if (window.location.hostname !== "localhost") return;
 
   void (async () => {
     try {
       const db = await getFirestoreInstance();
-      const q = query(collection(db, "usuarios"));
-      const snap = await getDocs(q);
-      if (!snap.empty) return; // already seeded
 
       await Promise.all(
         initialAdminUsers.map(async (u) => {
-          await setDoc(doc(db, "usuarios", u.id), u);
+          await setDoc(doc(db, "usuarios", u.id), {
+            ...u,
+            email: normalizeEmail(u.email),
+          }, { merge: true });
         })
       );
     } catch (e) {
@@ -110,24 +124,57 @@ export const getUserByEmail = (email: string): User | undefined => {
 export const getUserByEmailAsync = async (email: string): Promise<User | undefined> => {
   if (typeof window === "undefined") return undefined;
 
-  try {
-    const db = await getFirestoreInstance();
-    const q = query(collection(db, "usuarios"), where("email", "==", email));
-    const snap = await getDocs(q);
-    if (snap.empty) return undefined;
-
-    const doc = snap.docs[0];
-    const data = doc.data() as any;
-
-    const user: User = {
-      id: doc.id,
-      nombre: data.nombre ?? data.displayName ?? data.email,
-      email: data.email,
-      password: (data.password as string) ?? "",
-      rol: (data.rol as User["rol"]) ?? "Profesor",
+  const seedUser = getSeedUserByEmail(email);
+  if (seedUser) {
+    return {
+      ...seedUser,
+      email: normalizeEmail(seedUser.email),
     };
+  }
 
-    return user;
+  try {
+    const auth = await getFirebaseAuth();
+    const currentUser = auth.currentUser;
+    if (!currentUser?.email) {
+      return undefined;
+    }
+
+    const normalizedEmail = normalizeEmail(email);
+    const db = await getFirestoreInstance();
+    const q = query(collection(db, "usuarios"), where("email", "==", normalizedEmail));
+    const snap = await getDocs(q);
+
+    if (!snap.empty) {
+      const doc = snap.docs[0];
+      const data = doc.data() as any;
+
+      const user: User = {
+        id: doc.id,
+        nombre: data.nombre ?? data.displayName ?? data.email,
+        email: data.email ?? normalizedEmail,
+        password: (data.password as string) ?? "",
+        rol: (data.rol as User["rol"]) ?? "Profesor",
+      };
+
+      return user;
+    }
+
+    const docentesQuery = query(collection(db, "docentes"), where("correo", "==", normalizedEmail));
+    const docentesSnap = await getDocs(docentesQuery);
+    if (!docentesSnap.empty) {
+      const docenteDoc = docentesSnap.docs[0];
+      const docenteData = docenteDoc.data() as any;
+
+      return {
+        id: docenteDoc.id,
+        nombre: docenteData.nombre ?? docenteData.email ?? normalizedEmail,
+        email: normalizedEmail,
+        password: generateGenericProfessorPassword(),
+        rol: "Profesor",
+      };
+    }
+
+    return undefined;
   } catch (e) {
     console.error("[lib/auth] getUserByEmailAsync error", e);
     return undefined;
@@ -142,16 +189,51 @@ export const addUserAccount = async (partial: Omit<User, "id" | "password">, cus
 
   try {
     const db = await getFirestoreInstance();
+    const auth = await getFirebaseAuth();
     const password = generateGenericProfessorPassword();
-    const newUser: User = { id: customId || generateUserId(), ...partial, password };
+    const normalizedEmail = normalizeEmail(partial.email);
+    const newUser: User = { id: customId || generateUserId(), ...partial, email: normalizedEmail, password };
 
     // Check collision by querying email
-    const q = query(collection(db, "usuarios"), where("email", "==", partial.email));
+    const q = query(collection(db, "usuarios"), where("email", "==", normalizedEmail));
     const snap = await getDocs(q);
     if (!snap.empty) return { error: "Ya existe un usuario con ese correo." };
 
-    await setDoc(doc(db, "usuarios", newUser.id), newUser);
-    return { user: newUser, password };
+    const previousUserEmail = auth.currentUser?.email ?? null;
+    let previousUserProfile: User | undefined;
+
+    if (previousUserEmail) {
+      previousUserProfile = await getUserByEmailAsync(previousUserEmail);
+    }
+
+    setAuthStateSyncSuppression(true);
+
+    try {
+      try {
+        await createUserWithEmailAndPassword(auth, normalizedEmail, password);
+      } catch (e) {
+        const err = e as any;
+        const code = err?.code ?? "";
+        if (code !== "auth/email-already-in-use") {
+          console.error("Error creating Firebase Auth account:", e);
+          return { error: "No se pudo crear la cuenta de autenticación." };
+        }
+      }
+
+      if (previousUserEmail && previousUserProfile?.password) {
+        try {
+          await signOut(auth);
+          await signInWithEmailAndPassword(auth, previousUserEmail, previousUserProfile.password);
+        } catch (restoreError) {
+          console.error("Error restoring previous admin session:", restoreError);
+        }
+      }
+
+      await setDoc(doc(db, "usuarios", newUser.id), newUser, { merge: true });
+      return { user: newUser, password };
+    } finally {
+      setAuthStateSyncSuppression(false);
+    }
   } catch (e) {
     console.error("Error adding user to Firestore:", e);
     return { error: "Error creando usuario." };

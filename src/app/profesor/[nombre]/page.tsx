@@ -30,7 +30,7 @@ export default function ProfesorPage() {
         }
       })()
     : rawNombre;
-  const { user, isInitializing, logout } = useContext(AuthContext);
+  const { user, firebaseUser, isInitializing, logout } = useContext(AuthContext);
   const [activeSection, setActiveSection] = useState<Section>("Mis Cursos");
   const [reservas, setReservas] = useState<ReservaSala[]>([]);
   const [bloqueos, setBloqueos] = useState<HorarioBloqueado[]>([]);
@@ -38,19 +38,23 @@ export default function ProfesorPage() {
 
   useEffect(() => {
     if (!isInitializing) {
+      if (!firebaseUser) {
+        router.replace("/loading");
+        return;
+      }
       if (!user || user.rol !== "Profesor") {
         router.replace("/loading");
       }
     }
-  }, [isInitializing, user, router]);
+  }, [isInitializing, firebaseUser, user, router]);
 
   useEffect(() => {
-    if (!isInitializing && user) {
+    if (!isInitializing && firebaseUser && user) {
       if (routeNombre && routeNombre !== user.nombre) {
         router.replace(`/profesor/${encodeURIComponent(user.nombre)}`);
       }
     }
-  }, [isInitializing, user, routeNombre, router]);
+  }, [isInitializing, firebaseUser, user, routeNombre, router]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -91,7 +95,7 @@ export default function ProfesorPage() {
     );
   }
 
-  if (!user || user.rol !== "Profesor") {
+  if (!firebaseUser || !user || user.rol !== "Profesor") {
     return (
       <main style={{ padding: 24 }}>
         <p>Accediendo al panel del docente...</p>

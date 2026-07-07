@@ -281,40 +281,78 @@ export async function listenToCitas(callback: (items: Cita[]) => void): Promise<
 
 // Replace previous localStorage fallbacks: app will use Firestore exclusively.
 export const seedInitialAdminData = (): void => {
-  // Seed Firestore with initial admin data when collections are empty.
+  if (typeof window === "undefined") return;
+
   void (async () => {
     try {
-      const cursos = await getCursosFromFirestore();
-      const docentes = await getDocentesFromFirestore();
-      const reservas = await getReservaSalaFromFirestore();
-      const bloqueos = await getHorarioBloqueadoFromFirestore();
+      const db = await getFirestoreInstance();
 
-      // If collections already have data, skip seeding
-      if ((cursos && cursos.length > 0) || (docentes && docentes.length > 0) || (reservas && reservas.length > 0) || (bloqueos && bloqueos.length > 0)) {
-        return;
+      const [cursosSnap, docentesSnap, reservasSnap, bloqueosSnap] = await Promise.all([
+        getDocs(query(collection(db, CURSOS_COLLECTION))),
+        getDocs(query(collection(db, DOCENTES_COLLECTION))),
+        getDocs(query(collection(db, RESERVAS_SALA_COLLECTION))),
+        getDocs(query(collection(db, HORARIOS_BLOQUEADOS_COLLECTION))),
+      ]);
+
+      const defaultCursos: Curso[] = [
+        { id: "curso-1", nombre: "1° Básico A", profesorId: "doc-1" },
+        { id: "curso-2", nombre: "2° Básico B", profesorId: "doc-2" },
+        { id: "curso-3", nombre: "3° Básico C", profesorId: "doc-3" },
+      ];
+
+      const defaultDocentes: Docente[] = [
+        { id: "doc-1", nombre: "Carlos Ramírez", rut: "15.678.901-2", fechaNacimiento: "1985-03-20", correo: "carlos.ramirez@laurarobles.cl", cursoId: "curso-1", asignaturas: ["Matemáticas", "Ciencias Naturales"] },
+        { id: "doc-2", nombre: "María Fuentes", rut: "16.789.012-3", fechaNacimiento: "1988-07-14", correo: "maria.fuentes@laurarobles.cl", cursoId: "curso-2", asignaturas: ["Lenguaje y Comunicación", "Historia, Geografía y Ciencias Sociales"] },
+        { id: "doc-3", nombre: "Diego Morales", rut: "17.890.123-4", fechaNacimiento: "1990-01-25", correo: "diego.morales@laurarobles.cl", cursoId: "curso-3", asignaturas: ["Inglés", "Educación Física"] },
+      ];
+
+      const writes: Promise<void>[] = [];
+
+      if (cursosSnap.empty) {
+        writes.push(...defaultCursos.map((curso) => setDoc(doc(db, CURSOS_COLLECTION, curso.id), { nombre: curso.nombre, profesorId: curso.profesorId })));
       }
 
-      // Default cursos
-      const defaultCursos: Curso[] = [
-        getNewCurso({ nombre: "1° Básico A", profesorId: "doc-1" }),
-        getNewCurso({ nombre: "2° Básico B", profesorId: "doc-2" }),
-        getNewCurso({ nombre: "3° Básico C", profesorId: "doc-3" }),
-      ];
+      if (docentesSnap.empty) {
+        writes.push(...defaultDocentes.map((docente) => setDoc(doc(db, DOCENTES_COLLECTION, docente.id), {
+          nombre: docente.nombre,
+          rut: docente.rut,
+          fechaNacimiento: docente.fechaNacimiento,
+          correo: docente.correo,
+          cursoId: docente.cursoId ?? null,
+          asignaturas: docente.asignaturas ?? [],
+        })));
+      }
 
-      // Default docentes with stable IDs
-      const defaultDocentes: Docente[] = [
-        getNewDocente({ nombre: "Carlos Ramírez", rut: "15.678.901-2", fechaNacimiento: "1985-03-20", correo: "carlos.ramirez@laurarobles.cl", cursoId: defaultCursos[0].id, asignaturas: ["Matemáticas", "Ciencias Naturales"] }, "doc-1"),
-        getNewDocente({ nombre: "María Fuentes", rut: "16.789.012-3", fechaNacimiento: "1988-07-14", correo: "maria.fuentes@laurarobles.cl", cursoId: defaultCursos[1].id, asignaturas: ["Lenguaje y Comunicación", "Historia, Geografía y Ciencias Sociales"] }, "doc-2"),
-        getNewDocente({ nombre: "Diego Morales", rut: "17.890.123-4", fechaNacimiento: "1990-01-25", correo: "diego.morales@laurarobles.cl", cursoId: defaultCursos[2].id, asignaturas: ["Inglés", "Educación Física"] }, "doc-3"),
-      ];
+      if (reservasSnap.empty) {
+        writes.push(setDoc(doc(db, RESERVAS_SALA_COLLECTION, "reserva-demo"), {
+          id: "reserva-demo",
+          nombre: "Demo",
+          apellido: "Profesor",
+          rut: "11.111.111-1",
+          correo: "demo@laurarobles.cl",
+          fecha: new Date().toISOString().slice(0, 10),
+          horaInicio: "08:00",
+          horaFin: "09:00",
+          curso: "1° Básico A",
+          asignatura: "Matemáticas",
+          personas: "20",
+          motivo: "Demo inicial",
+          estado: "Pendiente",
+        }));
+      }
 
-      // Write defaults to Firestore
-      await Promise.all(defaultCursos.map((c) => addCursoToFirestore(c)));
-      await Promise.all(defaultDocentes.map((d) => addDocenteToFirestore(d)));
+      if (bloqueosSnap.empty) {
+        writes.push(setDoc(doc(db, HORARIOS_BLOQUEADOS_COLLECTION, "bloqueo-demo"), {
+          id: "bloqueo-demo",
+          fecha: new Date().toISOString().slice(0, 10),
+          hora: "12:00",
+          motivo: "Reunión administrativa",
+        }));
+      }
 
-      // Optionally seed a sample bloqueo
-      const sampleBloqueo = getNewHorarioBloqueado({ fecha: new Date().toISOString().slice(0, 10), hora: "12:00", motivo: "Reunión administrativa" });
-      await addHorarioBloqueadoToFirestore(sampleBloqueo);
+      if (writes.length > 0) {
+        await Promise.all(writes);
+      }
     } catch (e) {
       // If seeding fails, don't block the app — log and continue
       // eslint-disable-next-line no-console

@@ -53,7 +53,7 @@ export default function AdminSectionPage() {
         }
       })()
     : rawNombre;
-  const { user, logout, isInitializing } = useContext(AuthContext);
+  const { user, firebaseUser, logout, isInitializing } = useContext(AuthContext);
   const [activeSection, setActiveSection] = useState<Section>("Cursos");
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [docentes, setDocentes] = useState<Docente[]>([]);
@@ -85,8 +85,11 @@ export default function AdminSectionPage() {
 
   useEffect(() => {
     if (!isInitializing) {
-      if (!user) {
+      if (!firebaseUser) {
         router.replace("/loading");
+        return;
+      }
+      if (!user) {
         return;
       }
       if (user.rol !== "Administrador") {
@@ -97,15 +100,15 @@ export default function AdminSectionPage() {
         }
       }
     }
-  }, [isInitializing, router, user]);
+  }, [isInitializing, router, user, firebaseUser]);
 
   useEffect(() => {
-    if (!isInitializing && user) {
+    if (!isInitializing && firebaseUser && user) {
       if (routeNombre && routeNombre !== user.nombre) {
         router.replace(`/admin_section/${encodeURIComponent(user.nombre)}`);
       }
     }
-  }, [isInitializing, user, routeNombre, router]);
+  }, [isInitializing, firebaseUser, user, routeNombre, router]);
 
   useEffect(() => {
     seedInitialAdminData();
@@ -491,14 +494,14 @@ export default function AdminSectionPage() {
           <div style={{ maxWidth: "1100px", margin: "0 auto 2rem", padding: "1.5rem", background: "#ecfdf5", border: "2px solid #10b981", borderRadius: "14px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "1rem" }}>
               <div>
-                <h3 style={{ margin: "0 0 0.5rem 0", color: "#059669" }}>✓ Profesor creado exitosamente</h3>
+                <h3 style={{ margin: "0 0 0.5rem 0", color: "#059669" }}>✓ Profesor creado correctamente</h3>
                 <div style={{ marginBottom: "0.5rem" }}>
                   <strong>Correo institucional:</strong> <code style={{ background: "white", padding: "0.25rem 0.5rem", borderRadius: "4px", fontFamily: "monospace" }}>{lastCreatedAccount.email}</code>
                 </div>
                 <div>
                   <strong>Contraseña temporal:</strong> <code style={{ background: "white", padding: "0.25rem 0.5rem", borderRadius: "4px", fontFamily: "monospace" }}>{lastCreatedAccount.password}</code>
                 </div>
-                <p style={{ margin: "0.75rem 0 0 0", fontSize: "0.85rem", color: "#047857" }}>Comparte estas credenciales con el profesor para que pueda acceder a la intranet.</p>
+                <p style={{ margin: "0.75rem 0 0 0", fontSize: "0.85rem", color: "#047857" }}>La sesión del administrador se mantuvo activa y las credenciales quedaron listas para compartir con el profesor.</p>
               </div>
               <div style={{ display: "flex", gap: "0.75rem" }}>
                 <button

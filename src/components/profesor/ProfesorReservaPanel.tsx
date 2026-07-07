@@ -373,7 +373,7 @@ export function ProfesorReservaPanel({
                 className={styles.input}
               >
                 <option value="">Selecciona una asignatura</option>
-                {asignaturasDisponibles.map((asignaturaDisponible) => (
+                {asignaturasDisponibles.map((asignaturaDisponible: string) => (
                   <option key={asignaturaDisponible} value={asignaturaDisponible}>
                     {asignaturaDisponible}
                   </option>
